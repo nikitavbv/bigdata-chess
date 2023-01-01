@@ -1,0 +1,154 @@
+syntax = "proto3";
+
+package chess;
+
+import "google/protobuf/timestamp.proto";
+
+message RawChessGame {
+    string metadata = 1;
+    string moves = 2;
+}
+
+message ChessGame {
+    string event_name = 1;
+    string link = 2;
+    google.protobuf.Timestamp date = 3;
+    Player black_player = 4;
+    Player white_player = 5;
+    GameResult result = 6;
+    optional sint32 rating_outcome_for_white = 7;
+    optional sint32 rating_outcome_for_black = 8;
+    string eco = 9; // something like opening
+    string opening = 10;
+    Timecontrol timecontrol = 11;
+    Termination termination = 12;
+
+    repeated GameEntry game_entries = 13;
+}
+
+enum GameResult {
+    BLACK_WINS = 0;
+    WHITE_WINS = 1;
+    DRAW = 2;
+    STAR = 3; // I don't know what that means yet
+}
+
+message Player {
+    string name = 1;
+    uint32 elo = 2;
+    optional PlayerTitle title = 3;
+}
+
+enum PlayerTitle {
+    FideMaster = 0;
+    InternationalMaster = 1;
+    NationalMaster = 2;
+    Bot = 3;
+    CandidateMaster = 4;
+    Grandmaster = 5;
+    WomanInternationalMaster = 6;
+    WomanFideMaster = 7;
+    LichessMaster = 8;
+    WomanGrandmaster = 9;
+}
+
+message Timecontrol {
+    int32 duration = 1;
+    int32 increment = 2;
+}
+
+enum Termination {
+    Normal = 0;
+    TimeForefeit = 1;
+    Abandonded = 2;
+    Unterminated = 3;
+    RulesInfraction = 4;
+}
+
+message GameEntry {
+    San san = 1;
+    optional Nag nag = 2;
+    Comment comment = 3;
+}
+
+message San {
+    NormalSan normal = 1;
+    CastleSan castle = 2;
+    PutSan put = 3;
+    optional bool is_check = 4;
+    optional bool is_checkmate = 5;
+}
+
+message NormalSan {
+    Role role = 1;
+    optional File file = 2;
+    optional Rank rank = 3;
+    bool capture = 4;
+    Square to = 5;
+    optional Role promotion = 6;
+}
+
+enum Role {
+    Pawn = 0;
+    Knight = 1;
+    Bishop = 2;
+    Rook = 3;
+    Queen = 4;
+    King = 5;
+}
+
+enum File {
+    A = 0;
+    B = 1;
+    C = 2;
+    D = 3;
+    E = 4;
+    F = 5;
+    G = 6;
+    H = 7;
+}
+
+enum Rank {
+    First = 0;
+    Second = 1;
+    Third = 2;
+    Fourth = 3;
+    Fifth = 4;
+    Sixth = 5;
+    Seventh = 6;
+    Eighth = 7;
+}
+
+message Square {
+    File file = 1;
+    Rank rank = 2;
+}
+
+message CastleSan {
+    CastlingSide side = 1;
+}
+
+enum CastlingSide {
+    KingSide = 0;
+    QueenSide = 1;
+}
+
+message PutSan {
+    Role role = 1;
+    Square to = 2;
+}
+
+enum Nag {
+    GoodMove = 0;
+    Mistake = 1;
+    BrilliantMove = 2;
+    Blunder = 3;
+    SpeculativeMove = 4;
+    DubiousMove = 5;
+}
+
+message Comment {
+    optional uint32 clock = 1;
+    optional float eval = 2;
+    optional int32 getting_mated_in = 3;
+}

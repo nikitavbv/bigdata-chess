@@ -1,0 +1,21 @@
+[package]
+name = "bigdata-chess-core"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tracing = "0.1.37"
+rdkafka = "0.29.0"
+rand = "0.8.5"
+serde = "1.0.148"
+prost = "0.11.5"
+toml = "0.5.10"
+derive_builder = "0.12.0"
+prost-types = "0.11.5"
+typed-builder = "0.11.0"
+sqlx = { version = "0.6.2", features = ["runtime-tokio-rustls", "postgres"] }
+
+[build-dependencies]
+prost-build = "0.11.5"
