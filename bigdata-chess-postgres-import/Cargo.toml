@@ -12,4 +12,5 @@ prost = "0.11.5"
 base64 = "0.20.0"
 indicatif = "0.17.2"
 tokio = { version = "1.23.0", features = ["full"] }
+tracing-subscriber = { version = "0.3.16", features = ["json"] }
 bigdata-chess-core = { path = "../bigdata-chess-core" }

@@ -26,6 +26,7 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
     loop {
         let msg = consumer.recv().await.unwrap();
         let payload = msg.payload().unwrap();
+
         let game = ChessGame::decode(payload).unwrap();
         let id = base64::encode(msg.key().unwrap());
         let game_entity = into_chess_game_entity(id, game);
@@ -33,6 +34,8 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
         database.save_game(&game_entity).await;
 
         consumer.commit_message(&msg, CommitMode::Sync).unwrap();
+
+        pb.inc(1);
     }
 }
 

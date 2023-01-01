@@ -1,18 +1,16 @@
-use crate::database::Database;
-
 use {
     std::fs::read_to_string,
     tracing::warn,
     serde::Deserialize,
 };
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Config {
     pub steps: StepsConfig,
     pub infra: Option<InfraConfig>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct StepsConfig {
     pub update_checker: UpdateCheckerStepConfig,
     pub file_downloader: Option<FileDownloaderStepConfig>,
@@ -21,27 +19,27 @@ pub struct StepsConfig {
     pub game_parser: GameParserStepConfig,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct UpdateCheckerStepConfig {
     pub enabled: bool,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct FileDownloaderStepConfig {
     pub enabled: bool,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct ChunkSplitterStepConfig {
     pub enabled: bool,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct GameParserStepConfig {
     pub enabled: bool,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct InfraConfig {
     queue: Option<QueueConfig>,
     storage: Option<StorageConfig>,
@@ -49,19 +47,19 @@ pub struct InfraConfig {
     database: DatabaseConfig,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct QueueConfig {
     pub endpoint: String,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct StorageConfig {
     endpoint: Option<String>,
     pub access_key: Option<String>,
     pub secret_key: Option<String>,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct DatabaseConfig {
     connection_string: Option<String>,
 }
@@ -176,6 +174,10 @@ impl InfraConfig {
 
     pub fn storage(&self) -> StorageConfig {
         self.storage.as_ref().cloned().unwrap_or_default()
+    }
+
+    pub fn database(&self) -> &DatabaseConfig {
+        &self.database
     }
 }
 
