@@ -204,7 +204,7 @@ impl StorageConfig {
 }
 
 impl DatabaseConfig {
-    pub fn connection_string(&self) -> &str {
-        self.connection_string.as_ref().unwrap()
+    pub fn connection_string(&self) -> Option<&String> {
+        self.connection_string.as_ref()
     }
 }

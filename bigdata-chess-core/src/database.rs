@@ -30,7 +30,7 @@ impl Database {
         Self {
             pool: PgPoolOptions::new()
                 .max_connections(5)
-                .connect(config.connection_string())
+                .connect(config.connection_string().unwrap())
                 .await
                 .unwrap(),
         }
