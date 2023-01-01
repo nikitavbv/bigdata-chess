@@ -50,6 +50,7 @@ enum PlayerTitle {
     WomanFideMaster = 7;
     LichessMaster = 8;
     WomanGrandmaster = 9;
+    WomanCandidateMaster = 10;
 }
 
 message Timecontrol {

@@ -100,6 +100,7 @@ impl TryFrom<&str> for PlayerTitle {
             "WFM" => Self::WomanFideMaster,
             "LM" => Self::LichessMaster,
             "WGM" => Self::WomanGrandmaster,
+            "WCM" => Self::WomanCandidateMaster,
             other => return Err(format!("Unexpected player title: {}", other)),
         })
     }
