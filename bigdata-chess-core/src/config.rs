@@ -17,6 +17,8 @@ pub struct StepsConfig {
     pub chunk_splitter: Option<ChunkSplitterStepConfig>,
     #[serde(default)]
     pub game_parser: GameParserStepConfig,
+    #[serde(default)]
+    pub postgres_import: PostgresImportStepConfig,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -36,6 +38,11 @@ pub struct ChunkSplitterStepConfig {
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct GameParserStepConfig {
+    pub enabled: bool,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct PostgresImportStepConfig {
     pub enabled: bool,
 }
 
@@ -80,6 +87,7 @@ impl Default for StepsConfig {
             file_downloader: None,
             chunk_splitter: None,
             game_parser: GameParserStepConfig::default(),
+            postgres_import: PostgresImportStepConfig::default(),
         }
     }
 }
@@ -101,6 +109,14 @@ impl Default for ChunkSplitterStepConfig {
 }
 
 impl Default for GameParserStepConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+        }
+    }
+}
+
+impl Default for PostgresImportStepConfig {
     fn default() -> Self {
         Self {
             enabled: false,
