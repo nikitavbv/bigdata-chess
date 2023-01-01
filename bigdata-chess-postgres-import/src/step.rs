@@ -3,25 +3,23 @@ use {
     tracing::info,
     prost::Message as ProstMessage,
     rdkafka::{message::Message, consumer::{Consumer, CommitMode}},
-    indicatif::{ProgressBar, ProgressStyle},
     bigdata_chess_core::{
         queue::{Queue, TOPIC_CHESS_GAMES},
         database::{Database, ChessGameEntity},
         data::ChessGame,
     },
+    crate::progress::Progress,
 };
 
 pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
     info!("running postgres import step");
 
-    let pb = ProgressBar::new_spinner();
-    pb.set_style(ProgressStyle::with_template("importing games into postgres: {pos} games processed [{per_sec}]").unwrap());
-    pb.set_message("importing games into progres");
-
     let consumer = queue.consumer_for_topic(
         "bigdata-chess-postgres-import",
         TOPIC_CHESS_GAMES,
     );
+
+    let mut progress = Progress::new("processing games".to_owned());
 
     loop {
         let msg = consumer.recv().await.unwrap();
@@ -34,8 +32,8 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
         database.save_game(&game_entity).await;
 
         consumer.commit_message(&msg, CommitMode::Sync).unwrap();
-
-        pb.inc(1);
+        
+        progress.update();
     }
 }
 

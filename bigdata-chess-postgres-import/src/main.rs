@@ -1,3 +1,4 @@
+mod progress;
 mod step;
 mod utils;
 
