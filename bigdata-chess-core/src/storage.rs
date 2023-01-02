@@ -52,7 +52,11 @@ impl Storage {
     }
 
     pub async fn put_game_data_file(&self, key: &str, data: Vec<u8>) {
-        self.bucket.put_object(format!("game-data/{}", key), &data).await.unwrap();
+        self.bucket.put_object(format!("game-data/games/{}", key), &data).await.unwrap();
+    }
+
+    pub async fn put_game_moves_data_file(&self, key: &str, data: Vec<u8>) {
+        self.bucket.put_object(format!("game-data/moves/{}", key), &data).await.unwrap();
     }
 }
 
