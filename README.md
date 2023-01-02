@@ -4,8 +4,8 @@ Playing with datasets from [lichess database](https://database.lichess.org/) as 
 
 ## how will import into hdfs work
 
-[x] write to object storage
-[ ] agent running on the master node downloads file and moves them into hdfs
+- [x] write to object storage
+- [ ] agent running on the master node downloads file and moves them into hdfs
 
 ## queries we need to process
 
