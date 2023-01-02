@@ -115,6 +115,7 @@ dependencies = [
  "prost-types",
  "rand",
  "rdkafka",
+ "reqwest",
  "rust-s3",
  "serde",
  "serde_json",

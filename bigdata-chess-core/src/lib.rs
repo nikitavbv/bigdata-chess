@@ -1,6 +1,7 @@
 pub mod config;
 pub mod database;
 pub mod entity;
+pub mod lichess;
 pub mod pgn;
 pub mod queue;
 pub mod storage;
