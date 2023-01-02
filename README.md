@@ -2,6 +2,11 @@
 
 Playing with datasets from [lichess database](https://database.lichess.org/) as a part of KPI course
 
+## how will import into hdfs work
+
+- write to object storage
+- agent running on the master node downloads file and moves them into hdfs
+
 ## queries we need to process
 
 - `select count(*) from chess_games`
