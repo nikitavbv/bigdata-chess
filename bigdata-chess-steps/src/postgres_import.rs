@@ -7,7 +7,7 @@ use {
         queue::{Queue, TOPIC_CHESS_GAMES},
         database::Database,
         data::ChessGame,
-        entity::{ChessGameEntity, into_chess_game_entity},
+        entity::{ChessGameEntity, into_chess_game_entity, into_chess_game_move_entity},
     },
     crate::progress::Progress,
 };
@@ -27,8 +27,20 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
         let payload = msg.payload().unwrap();
 
         let game = ChessGame::decode(payload).unwrap();
-        let id = base64::encode(msg.key().unwrap());
-        let game_entity = into_chess_game_entity(id, game);
+        let game_id = base64::encode(msg.key().unwrap());
+
+        let mut entry_index = 0;
+        for entry in &game.game_entries {
+            entry_index += 1;
+            if let Some(san) = &entry.san {
+                if let Some(normal) = &san.normal {
+                    let key = format!("{}:{}", game_id, entry_index);
+                    let game_move_entity = into_chess_game_move_entity(key, &game_id, normal);
+                    database.save_game_move(&game_move_entity).await;
+                }
+            }
+        }
+        let game_entity = into_chess_game_entity(game_id, game);
         
         database.save_game(&game_entity).await;
 

@@ -35,6 +35,32 @@ impl ChessGameEntity {
     }
 }
 
+impl ChessGameMoveEntity {
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    pub fn game_id(&self) -> &str {
+        &self.game_id
+    }
+
+    pub fn from_file(&self) -> Option<u8> {
+        self.from_file
+    }
+
+    pub fn from_rank(&self) -> Option<u8> {
+        self.from_rank
+    }
+
+    pub fn to_file(&self) -> Option<u8> {
+        self.to_file
+    }
+
+    pub fn to_rank(&self) -> Option<u8> {
+        self.to_rank
+    }
+}
+
 pub fn into_chess_game_entity(id: String, game: ChessGame) -> ChessGameEntity {
     ChessGameEntity::builder()
         .id(id)

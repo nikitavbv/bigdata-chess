@@ -2,7 +2,7 @@ use {
     sqlx::postgres::PgPoolOptions,
     crate::{
         config::DatabaseConfig,
-        entity::ChessGameEntity,
+        entity::{ChessGameEntity, ChessGameMoveEntity},
     },
 };
 
@@ -26,6 +26,19 @@ impl Database {
             .bind(game.id())
             .bind(game.opening())
             .bind(game.white_player_elo() as i32)
+            .execute(&self.pool)
+            .await
+            .unwrap();
+    }
+
+    pub async fn save_game_move(&self, game_move: &ChessGameMoveEntity) {
+        sqlx::query("insert into chess_game_moves (id, game_id, from_file, from_rank, to_file, to_rank) values ($1, $2, $3, $4, $5, $6)")
+            .bind(game_move.id())
+            .bind(game_move.game_id())
+            .bind(game_move.from_file().map(|v| v as i32))
+            .bind(game_move.from_rank().map(|v| v as i32))
+            .bind(game_move.to_file().map(|v| v as i32))
+            .bind(game_move.to_rank().map(|v| v as i32))
             .execute(&self.pool)
             .await
             .unwrap();
