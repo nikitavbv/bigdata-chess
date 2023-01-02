@@ -5,8 +5,9 @@ use {
     rdkafka::{message::Message, consumer::{Consumer, CommitMode}},
     bigdata_chess_core::{
         queue::{Queue, TOPIC_CHESS_GAMES},
-        database::{Database, ChessGameEntity},
+        database::Database,
         data::ChessGame,
+        entity::{ChessGameEntity, into_chess_game_entity},
     },
     crate::progress::Progress,
 };
@@ -35,12 +36,4 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
         
         progress.update();
     }
-}
-
-fn into_chess_game_entity(id: String, game: ChessGame) -> ChessGameEntity {
-    ChessGameEntity::builder()
-        .id(id)
-        .opening(game.opening)
-        .white_player_elo(game.white_player.unwrap().elo)
-        .build()
 }

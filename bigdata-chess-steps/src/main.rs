@@ -1,5 +1,6 @@
+mod postgres_import;
 mod progress;
-mod step;
+mod storage_import;
 mod utils;
 
 use {
@@ -9,9 +10,11 @@ use {
         config::Config,
         queue::Queue,
         database::Database,
+        storage::Storage,
     },
     crate::{
-        step::postgres_import_step,
+        postgres_import::postgres_import_step,
+        storage_import::storage_import_step,
         utils::init_logging,
     },
 };
@@ -23,8 +26,10 @@ async fn main() -> std::io::Result<()> {
     let config = Config::load();
     let queue = Arc::new(Queue::new(&config.infra().queue()));
     let database = Arc::new(Database::new(&config.infra().database()).await);
+    let storage = Arc::new(Storage::new(&config.infra().storage()));
 
-    postgres_import_step(queue, database).await;
+    // postgres_import_step(queue, database).await;
+    storage_import_step(queue, storage).await;
 
     Ok(())
 }
