@@ -2,5 +2,5 @@
 
 members = [
     "bigdata-chess-core",
-    "bigdata-chess-postgres-import",
+    "bigdata-chess-steps",
 ]
