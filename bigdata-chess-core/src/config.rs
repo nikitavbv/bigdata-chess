@@ -21,6 +21,8 @@ pub struct StepsConfig {
     pub postgres_import: PostgresImportStepConfig,
     #[serde(default)]
     pub storage_import: StorageImportStepConfig,
+    #[serde(default)]
+    pub hdfs_import: HdfsImportStepConfig,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -50,6 +52,11 @@ pub struct PostgresImportStepConfig {
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct StorageImportStepConfig {
+    pub enabled: bool,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct HdfsImportStepConfig {
     pub enabled: bool,
 }
 
@@ -96,6 +103,7 @@ impl Default for StepsConfig {
             game_parser: GameParserStepConfig::default(),
             postgres_import: PostgresImportStepConfig::default(),
             storage_import: StorageImportStepConfig::default(),
+            hdfs_import: HdfsImportStepConfig::default(),
         }
     }
 }
@@ -133,6 +141,14 @@ impl Default for PostgresImportStepConfig {
 }
 
 impl Default for StorageImportStepConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+        }
+    }
+}
+
+impl Default for HdfsImportStepConfig {
     fn default() -> Self {
         Self {
             enabled: false,
