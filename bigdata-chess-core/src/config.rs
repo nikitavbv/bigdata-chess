@@ -76,8 +76,9 @@ pub struct QueueConfig {
 #[derive(Deserialize, Clone, Debug)]
 pub struct StorageConfig {
     endpoint: Option<String>,
-    pub access_key: Option<String>,
-    pub secret_key: Option<String>,
+    access_key: Option<String>,
+    secret_key: Option<String>,
+    remote_api_key: Option<String>,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -180,6 +181,7 @@ impl Default for StorageConfig {
             endpoint: None,
             access_key: None,
             secret_key: None,
+            remote_api_key: None,
         }
     }
 }
@@ -232,6 +234,18 @@ impl InfraConfig {
 impl StorageConfig {
     pub fn endpoint(&self) -> String {
         self.endpoint.as_ref().cloned().unwrap_or("http://garage.default.svc.cluster.local:3900".to_owned())
+    }
+
+    pub fn access_key(&self) -> Option<&String> {
+        self.access_key.as_ref()
+    }
+
+    pub fn secret_key(&self) -> Option<&String> {
+        self.secret_key.as_ref()
+    }
+
+    pub fn remote_api_key(&self) -> Option<&String> {
+        self.remote_api_key.as_ref()
     }
 }
 
