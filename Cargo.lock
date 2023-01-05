@@ -132,12 +132,16 @@ dependencies = [
  "base64 0.20.0",
  "bigdata-chess-core",
  "csv",
+ "futures-util",
  "prost",
  "rand",
  "rdkafka",
+ "reqwest",
+ "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "url",
 ]
 
 [[package]]

@@ -1,3 +1,5 @@
+mod file_downloader;
+mod hdfs_import;
 mod postgres_import;
 mod progress;
 mod storage_import;
