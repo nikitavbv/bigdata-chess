@@ -36,7 +36,7 @@ use {
     },
 };
 
-async fn game_parser_step(queue: Arc<Queue>) -> std::io::Result<()> {
+pub async fn game_parser_step(queue: Arc<Queue>) -> std::io::Result<()> {
     info!("running game parser step");
 
     let consumer = queue.consumer("bigdata-chess-game-parser");
