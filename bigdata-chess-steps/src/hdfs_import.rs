@@ -3,9 +3,10 @@ use {
     tracing::info,
     bigdata_chess_core::storage::Storage,
     tokio::{time::sleep, fs, process::Command},
+    bigdata_chess_core::config::HdfsImportStepConfig,
 };
 
-pub async fn hdfs_import_step(storage: Arc<Storage>) {
+pub async fn hdfs_import_step(config: &HdfsImportStepConfig, storage: Arc<Storage>) {
     info!("running hdfs import step");
 
     loop {
@@ -16,6 +17,12 @@ pub async fn hdfs_import_step(storage: Arc<Storage>) {
         let mut total_games_synced = 0;
         for game_in_remote_storage in games_in_remote_storage {
             total_games_synced += 1;
+            if let Some(limit) = config.synced_games_files_limit() {
+                if total_games_synced > *limit {
+                    info!("reached limit of total synced games");
+                    break;
+                }
+            }
             
             if !keys_in_local_storage.contains(&game_in_remote_storage) {
                 synced_keys.insert(game_in_remote_storage.clone());
@@ -45,6 +52,12 @@ pub async fn hdfs_import_step(storage: Arc<Storage>) {
         let mut total_game_moves_synced = 0;
         for game_move_in_remote_storage in game_moves_in_remote_storage {
             total_game_moves_synced += 1;
+            if let Some(limit) = config.synced_game_moves_files_limit() {
+                if total_game_moves_synced > *limit {
+                    info!("reached limit of total synced moves");
+                    break;
+                }
+            }
 
             if !keys_in_local_storage.contains(&game_move_in_remote_storage) {
                 synced_keys.insert(game_move_in_remote_storage.clone());

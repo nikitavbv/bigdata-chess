@@ -26,7 +26,7 @@ async fn main() -> std::io::Result<()> {
     let config = Config::load();
     let storage = Arc::new(Storage::new(&config.infra().storage()));
 
-    hdfs_import_step(storage).await;
+    hdfs_import_step(config.steps.hdfs_import(), storage).await;
 
     Ok(())
 }

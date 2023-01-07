@@ -22,7 +22,7 @@ pub struct StepsConfig {
     #[serde(default)]
     pub storage_import: StorageImportStepConfig,
     #[serde(default)]
-    pub hdfs_import: HdfsImportStepConfig,
+    hdfs_import: HdfsImportStepConfig,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -161,6 +161,16 @@ impl Default for HdfsImportStepConfig {
     }
 }
 
+impl HdfsImportStepConfig {
+    pub fn synced_games_files_limit(&self) -> Option<&u32> {
+        self.synced_games_files_limit.as_ref()
+    }
+
+    pub fn synced_game_moves_files_limit(&self) -> Option<&u32> {
+        self.synced_game_moves_files_limit.as_ref()
+    }
+}
+
 impl Default for InfraConfig {
     fn default() -> Self {
         Self {
@@ -218,6 +228,10 @@ impl Config {
 impl StepsConfig {
     pub fn chunk_splitter(&self) -> ChunkSplitterStepConfig {
         self.chunk_splitter.as_ref().cloned().unwrap_or_default()
+    }
+
+    pub fn hdfs_import(&self) -> &HdfsImportStepConfig {
+        &self.hdfs_import
     }
 }
 
