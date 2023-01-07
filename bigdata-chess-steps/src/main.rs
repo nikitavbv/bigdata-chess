@@ -11,12 +11,9 @@ use {
     bigdata_chess_core::{
         config::Config,
         queue::Queue,
-        database::Database,
         storage::Storage,
     },
     crate::{
-        postgres_import::postgres_import_step,
-        storage_import::storage_import_step,
         hdfs_import::hdfs_import_step,
         utils::init_logging,
     },
@@ -27,7 +24,6 @@ async fn main() -> std::io::Result<()> {
     init_logging();
 
     let config = Config::load();
-    let database = Arc::new(Database::new(&config.infra().database()).await);
     let storage = Arc::new(Storage::new(&config.infra().storage()));
 
     hdfs_import_step(storage).await;
