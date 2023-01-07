@@ -7,6 +7,7 @@ use {
     histogram::Histogram,
     futures_util::stream::FuturesUnordered,
     futures::{StreamExt, FutureExt, future::join_all},
+    tokio::sync::Mutex,
     bigdata_chess_core::{
         queue::{Queue, TOPIC_CHESS_GAMES},
         database::Database,
@@ -20,15 +21,21 @@ use {
 pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
     info!("running postgres import step");
 
+    let progress = Arc::new(Mutex::new(Progress::new("processing games".to_owned())));  
+    
+    let mut consumers = Vec::new();
+    for _ in (0..2) {
+        consumers.push(run_consumer(queue.clone(), database.clone(), progress.clone()));
+    }
+
+    join_all(consumers).await;
+}
+
+async fn run_consumer(queue: Arc<Queue>, database: Arc<Database>, progress: Arc<Mutex<Progress>>) {
     let consumer = queue.consumer_for_topic(
         "bigdata-chess-postgres-import",
         TOPIC_CHESS_GAMES,
     );
-
-    let mut progress = Progress::new("processing games".to_owned());
-
-    let mut time_all = Histogram::new();
-    let mut time_database_ops = Histogram::new();
 
     let mut processed_games = 0;
 
@@ -60,24 +67,11 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
         let game_entity = into_chess_game_entity(game_id, game);
         futures.push(database.save_game(game_entity).boxed());
 
-        {
-            let started_at = Instant::now();
-            join_all(futures).await;
-            let time_spent = (Instant::now() - started_at).as_millis();
-            database_ops_millis += time_spent;
-        }
-        
+        join_all(futures).await;
+
         consumer.commit_message(&msg, CommitMode::Sync).unwrap();
-        
-        progress.update();
-        processed_games += 1;
-
-        time_all.increment((Instant::now() - started_at).as_millis() as u64).unwrap();
-        time_database_ops.increment(database_ops_millis as u64).unwrap();
-
-        if processed_games % 1000 == 0 {
-            info!("time_all: {}", time_all.percentile(90.0).unwrap());
-            info!("time_database_ops: {}", time_database_ops.percentile(90.0).unwrap());
+        {
+            progress.lock().await.update();
         }
     }
 }
