@@ -57,7 +57,9 @@ pub struct StorageImportStepConfig {
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct HdfsImportStepConfig {
-    pub enabled: bool,
+    enabled: bool,
+    synced_games_files_limit: Option<u32>,
+    synced_game_moves_files_limit: Option<u32>,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -153,6 +155,8 @@ impl Default for HdfsImportStepConfig {
     fn default() -> Self {
         Self {
             enabled: false,
+            synced_games_files_limit: None,
+            synced_game_moves_files_limit: None,
         }
     }
 }
