@@ -14,8 +14,6 @@ use {
 pub struct Database {
     pool: sqlx::postgres::PgPool,
     bb8_pool: bb8::Pool<CustomPostgresConnectionManager<NoTls>>,
-
-    statement_insert_game_move: Statement,
 }
 
 impl Database {
@@ -30,9 +28,6 @@ impl Database {
             .await
             .unwrap();
 
-        info!("preparing statements");
-        let statement_insert_game_move = bb8_pool.get().await.unwrap().prepare("insert into chess_game_moves (id, game_id, from_file, from_rank, to_file, to_rank) values ($1, $2, $3, $4, $5, $6) on conflict do nothing").await.unwrap();
-
         info!("connected to database");
         Self {
             pool: PgPoolOptions::new()
@@ -41,8 +36,6 @@ impl Database {
                 .await
                 .unwrap(),
             bb8_pool,
-
-            statement_insert_game_move, 
         }
     }
 
