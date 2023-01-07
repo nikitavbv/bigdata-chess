@@ -1,4 +1,4 @@
-// current performance: 2.42/second
+// current performance: 4.28/second
 use {
     std::{sync::Arc, time::Instant},
     tracing::info,
@@ -88,7 +88,7 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
         time_all.increment((Instant::now() - started_at).as_millis() as u64).unwrap();
         time_database_ops.increment(database_ops_millis as u64).unwrap();
 
-        if processed_games % 100 == 0 {
+        if processed_games % 1000 == 0 {
             info!("time_all: {}", time_all.percentile(90.0).unwrap());
             info!("time_database_ops: {}", time_database_ops.percentile(90.0).unwrap());
             info!("time_database_games: {}", time_database_games.percentile(90.0).unwrap());
