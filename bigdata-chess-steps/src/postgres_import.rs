@@ -1,4 +1,4 @@
-// current performance: 11.68/second
+// current performance: 15/second
 use {
     std::{sync::Arc, time::Instant},
     tracing::info,
@@ -24,7 +24,7 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
     let progress = Arc::new(Mutex::new(Progress::new("processing games".to_owned())));  
     
     let mut consumers = Vec::new();
-    for _ in (0..2) {
+    for _ in 0..4 {
         consumers.push(run_consumer(queue.clone(), database.clone(), progress.clone()));
     }
 
