@@ -1,5 +1,6 @@
 use {
     sqlx::postgres::PgPoolOptions,
+    tokio_postgres::{NoTls, Socket, tls::NoTlsStream, Statement},
     crate::{
         config::DatabaseConfig,
         entity::{ChessGameEntity, ChessGameMoveEntity},
@@ -8,16 +9,28 @@ use {
 
 pub struct Database {
     pool: sqlx::postgres::PgPool,
+    client: tokio_postgres::Client,
+    connection: tokio_postgres::Connection<Socket, NoTlsStream>,
+
+    statement_insert_game_move: Statement,
 }
 
 impl Database {
     pub async fn new(config: &DatabaseConfig) -> Self {
+        let (client, connection) = tokio_postgres::connect(config.connection_string().unwrap(), NoTls).await.unwrap();
+
+        let statement_insert_game_move = client.prepare("insert into chess_game_moves (id, game_id, from_file, from_rank, to_file, to_rank) values ($1, $2, $3, $4, $5, $6)").await.unwrap();
+
         Self {
             pool: PgPoolOptions::new()
                 .max_connections(5)
                 .connect(config.connection_string().unwrap())
                 .await
                 .unwrap(),
+            client,
+            connection,
+
+            statement_insert_game_move, 
         }
     }
 
@@ -32,15 +45,13 @@ impl Database {
     }
 
     pub async fn save_game_move(&self, game_move: &ChessGameMoveEntity) {
-        sqlx::query("insert into chess_game_moves (id, game_id, from_file, from_rank, to_file, to_rank) values ($1, $2, $3, $4, $5, $6)")
-            .bind(game_move.id())
-            .bind(game_move.game_id())
-            .bind(game_move.from_file().map(|v| v as i32))
-            .bind(game_move.from_rank().map(|v| v as i32))
-            .bind(game_move.to_file().map(|v| v as i32))
-            .bind(game_move.to_rank().map(|v| v as i32))
-            .execute(&self.pool)
-            .await
-            .unwrap();
+        self.client.query(&self.statement_insert_game_move, &[
+            &game_move.id(),
+            &game_move.game_id(),
+            &game_move.from_file().map(|v| v as i32),
+            &game_move.from_rank().map(|v| v as i32),
+            &game_move.to_file().map(|v| v as i32),
+            &game_move.to_rank().map(|v| v as i32)
+        ]).await.unwrap();
     }
 }
