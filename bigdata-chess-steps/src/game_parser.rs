@@ -8,7 +8,7 @@ use {
     shakmaty::san::Suffix,
     chrono::{NaiveDate, NaiveDateTime, NaiveTime, Timelike},
     rand::Rng,
-    crate::{
+    bigdata_chess_core::{
         queue::{Queue, TOPIC_LICHESS_RAW_GAMES, TOPIC_CHESS_GAMES},
         data::{
             RawChessGame, 
