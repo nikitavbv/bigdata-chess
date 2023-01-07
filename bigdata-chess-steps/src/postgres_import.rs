@@ -1,4 +1,4 @@
-// current performance: 7.87/second
+// current performance: 7.93/second
 use {
     std::{sync::Arc, time::Instant},
     tracing::info,
