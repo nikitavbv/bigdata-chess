@@ -17,6 +17,7 @@ use {
     crate::{
         postgres_import::postgres_import_step,
         storage_import::storage_import_step,
+        hdfs_import::hdfs_import_step,
         utils::init_logging,
     },
 };
@@ -30,13 +31,7 @@ async fn main() -> std::io::Result<()> {
     let database = Arc::new(Database::new(&config.infra().database()).await);
     let storage = Arc::new(Storage::new(&config.infra().storage()));
 
-    let res = storage.remote_list_game_data_files().await.unwrap();
-    let res = storage.remote_game_data_file(&res[0]).await.unwrap();
-
-    info!("res is: {:?}", String::from_utf8(res).unwrap());
-
-    // postgres_import_step(queue, database).await;
-    // storage_import_step(queue, storage).await;
+    hdfs_import_step(storage).await;
 
     Ok(())
 }

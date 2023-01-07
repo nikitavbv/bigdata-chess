@@ -66,41 +66,32 @@ impl Storage {
     }
 
     pub async fn remote_list_game_data_files(&self) -> Result<Vec<String>> {
-        let res = self.remote_api_request("http://storage.nikitavbv.com/v1/chess-data/game-data/games").await;
-    
-        if res.status() != StatusCode::OK {
-            return Err(anyhow!("remote storage api returned status: {}", res.status().as_u16()));
-        }
-
+        let res = self.remote_api_request("http://storage.nikitavbv.com/v1/chess-data/game-data/games").await?;
         Ok(res.json().await.unwrap())
     }
 
     pub async fn remote_list_game_moves_files(&self) -> Result<Vec<String>> {
-        let res = self.remote_api_request("http://storage.nikitavbv.com/v1/chess-data/game-data/moves").await;
-
-        if res.status() != StatusCode::OK {
-            return Err(anyhow!("remote storage api returned status: {}", res.status().as_u16()));
-        }
-
+        let res = self.remote_api_request("http://storage.nikitavbv.com/v1/chess-data/game-data/moves").await?;
         Ok(res.json().await.unwrap())
     }
 
     pub async fn remote_game_data_file(&self, key: &str) -> Result<Vec<u8>> {
-        let res = self.remote_api_request(&format!("http://storage.nikitavbv.com/v1/chess-data/{}", key)).await;
-        
+        let res = self.remote_api_request(&format!("http://storage.nikitavbv.com/v1/chess-data/{}", key)).await?;
+        Ok(res.bytes().await.unwrap().to_vec())
+    }
+
+    async fn remote_api_request(&self, url: &str) -> Result<reqwest::Response> {
+        let res = self.client.get(url)
+            .header("Authorization", self.authorization_header_value_for_remote_api())
+            .send()
+            .await
+            .unwrap();
+
         if res.status() != StatusCode::OK {
             return Err(anyhow!("remote storage api returned status: {}", res.status().as_u16()));
         }
 
-        Ok(res.bytes().await.unwrap().to_vec())
-    }
-
-    async fn remote_api_request(&self, url: &str) -> reqwest::Response {
-        self.client.get(url)
-            .header("Authorization", self.authorization_header_value_for_remote_api())
-            .send()
-            .await
-            .unwrap()
+        Ok(res)
     }
 
     fn authorization_header_value_for_remote_api(&self) -> String {
