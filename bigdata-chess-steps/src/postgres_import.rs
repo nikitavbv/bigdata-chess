@@ -37,12 +37,7 @@ async fn run_consumer(queue: Arc<Queue>, database: Arc<Database>, progress: Arc<
         TOPIC_CHESS_GAMES,
     );
 
-    let mut processed_games = 0;
-
     loop {
-        let started_at = Instant::now();
-        let mut database_ops_millis = 0;
-
         let msg = consumer.recv().await.unwrap();
         let payload = msg.payload().unwrap();
 

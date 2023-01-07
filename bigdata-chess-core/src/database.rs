@@ -1,8 +1,6 @@
 use {
-    std::pin::Pin,
     tracing::info,
-    sqlx::postgres::PgPoolOptions,
-    tokio_postgres::{NoTls, Socket, tls::NoTlsStream, Statement},
+    tokio_postgres::{NoTls, Statement},
     crate::{
         config::DatabaseConfig,
         entity::{ChessGameEntity, ChessGameMoveEntity},
@@ -10,7 +8,6 @@ use {
 };
 
 pub struct Database {
-    pool: sqlx::postgres::PgPool,
     client: tokio_postgres::Client,
 
     statement_insert_game_move: Statement,
@@ -34,11 +31,6 @@ impl Database {
 
         info!("connected to database");
         Self {
-            pool: PgPoolOptions::new()
-                .max_connections(5)
-                .connect(config.connection_string().unwrap())
-                .await
-                .unwrap(),
             client,
 
             statement_insert_game_move, 
@@ -46,13 +38,11 @@ impl Database {
     }
 
     pub async fn save_game(&self, game: ChessGameEntity) {
-        sqlx::query("insert into chess_games (id, opening, white_player_elo) values ($1, $2, $3) on conflict do nothing")
-            .bind(game.id())
-            .bind(game.opening())
-            .bind(game.white_player_elo() as i32)
-            .execute(&self.pool)
-            .await
-            .unwrap();
+        self.client.query("insert into chess_games (id, opening, white_player_elo) values ($1, $2, $3) on conflict do nothing", &[
+            &game.id(),
+            &game.opening(),
+            &(game.white_player_elo() as i32),
+        ]).await.unwrap();
     }
 
     pub async fn save_game_move(&self, game_move: ChessGameMoveEntity) {
