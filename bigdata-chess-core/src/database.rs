@@ -29,7 +29,7 @@ impl Database {
         });
 
         info!("preparing statements");
-        let statement_insert_game_move = client.prepare("insert into chess_game_moves (id, game_id, from_file, from_rank, to_file, to_rank) values ($1, $2, $3, $4, $5, $6)").await.unwrap();
+        let statement_insert_game_move = client.prepare("insert into chess_game_moves (id, game_id, from_file, from_rank, to_file, to_rank) values ($1, $2, $3, $4, $5, $6) on conflict do nothing").await.unwrap();
 
         info!("connected to database");
         Self {
