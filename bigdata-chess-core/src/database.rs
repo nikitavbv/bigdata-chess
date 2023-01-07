@@ -11,7 +11,6 @@ use {
 pub struct Database {
     pool: sqlx::postgres::PgPool,
     client: tokio_postgres::Client,
-    connection: tokio_postgres::Connection<Socket, NoTlsStream>,
 
     statement_insert_game_move: Statement,
 }
@@ -22,6 +21,13 @@ impl Database {
 
         let (client, connection) = tokio_postgres::connect(config.connection_string().unwrap(), NoTls).await.unwrap();
 
+        tokio::spawn(async move {
+            if let Err(e) = connection.await {
+                eprintln!("connection error: {}", e);
+            }
+        });
+
+        info!("preparing statements");
         let statement_insert_game_move = client.prepare("insert into chess_game_moves (id, game_id, from_file, from_rank, to_file, to_rank) values ($1, $2, $3, $4, $5, $6)").await.unwrap();
 
         info!("connected to database");
@@ -32,7 +38,6 @@ impl Database {
                 .await
                 .unwrap(),
             client,
-            connection,
 
             statement_insert_game_move, 
         }

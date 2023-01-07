@@ -10,7 +10,6 @@ use {
     tracing::info,
     bigdata_chess_core::{
         config::Config,
-        queue::Queue,
         storage::Storage,
     },
     crate::{
