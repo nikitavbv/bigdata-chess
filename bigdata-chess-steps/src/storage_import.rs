@@ -13,6 +13,7 @@ use {
     crate::progress::Progress,
 };
 
+#[allow(dead_code)] // used from other crate
 pub async fn storage_import_step(queue: Arc<Queue>, storage: Arc<Storage>) {
     info!("running storage import step");
 

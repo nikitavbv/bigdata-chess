@@ -12,6 +12,7 @@ use {
     crate::progress::Progress,
 };
 
+#[allow(dead_code)] // used from other crate
 pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
     info!("running postgres import step");
 

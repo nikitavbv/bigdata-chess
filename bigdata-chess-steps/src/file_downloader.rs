@@ -15,6 +15,7 @@ use {
     },
 };
 
+#[allow(dead_code)] // used from other crate
 pub async fn file_downloader_step(storage: Arc<Storage>, bootstrap_servers: String) -> std::io::Result<()> {
     info!("running file downloader step");
     

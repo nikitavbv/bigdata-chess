@@ -27,7 +27,6 @@ async fn main() -> std::io::Result<()> {
     init_logging();
 
     let config = Config::load();
-    let queue = Arc::new(Queue::new(&config.infra().queue()));
     let database = Arc::new(Database::new(&config.infra().database()).await);
     let storage = Arc::new(Storage::new(&config.infra().storage()));
 
