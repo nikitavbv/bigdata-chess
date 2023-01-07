@@ -44,6 +44,7 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
         let game_id = base64::encode(msg.key().unwrap());
 
         let mut entry_index = 0;
+        let mut database_moves_millis = 0;
         for entry in &game.game_entries {
             entry_index += 1;
             if let Some(san) = &entry.san {
@@ -55,10 +56,12 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
                     database.save_game_move(&game_move_entity).await;
                     let time_spent = (Instant::now() - started_at).as_millis();
                     database_ops_millis += time_spent;
-                    time_database_moves.increment(time_spent as u64).unwrap();
+                    database_moves_millis += time_spent;
                 }
             }
         }
+        time_database_moves.increment(database_moves_millis as u64).unwrap();
+
         let game_entity = into_chess_game_entity(game_id, game);
         
         {
