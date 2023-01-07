@@ -6,7 +6,7 @@ use {
     rdkafka::{message::Message, consumer::{Consumer, CommitMode}},
     histogram::Histogram,
     futures_util::stream::FuturesUnordered,
-    futures::StreamExt,
+    futures::{StreamExt, future::join_all},
     bigdata_chess_core::{
         queue::{Queue, TOPIC_CHESS_GAMES},
         database::Database,
@@ -62,7 +62,7 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
         
         {
             let started_at = Instant::now();
-            let stream = futures::stream::iter(futures.into_iter()).collect::<Vec<_>>().await;
+            join_all(futures).await;
             let time_spent = (Instant::now() - started_at).as_millis();
             database_ops_millis += time_spent;
             database_moves_millis += time_spent;
