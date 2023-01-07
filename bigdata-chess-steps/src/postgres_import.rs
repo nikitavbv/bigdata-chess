@@ -28,6 +28,8 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
 
     let mut time_all = Histogram::new();
     let mut time_database_ops = Histogram::new();
+    let mut time_database_moves = Histogram::new();
+    let mut time_database_games = Histogram::new();
 
     let mut processed_games = 0;
 
@@ -51,7 +53,9 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
 
                     let started_at = Instant::now();
                     database.save_game_move(&game_move_entity).await;
-                    database_ops_millis += (Instant::now() - started_at).as_millis();
+                    let time_spent = (Instant::now() - started_at).as_millis();
+                    database_ops_millis += time_spent;
+                    time_database_moves.increment(time_spent as u64).unwrap();
                 }
             }
         }
@@ -60,7 +64,9 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
         {
             let started_at = Instant::now();
             database.save_game(&game_entity).await;
-            database_ops_millis += (Instant::now() - started_at).as_millis();    
+            let time_spent = (Instant::now() - started_at).as_millis();
+            database_ops_millis += time_spent;
+            time_database_games.increment(time_spent as u64).unwrap();
         }
         
         consumer.commit_message(&msg, CommitMode::Sync).unwrap();
@@ -74,6 +80,8 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
         if processed_games % 100 == 0 {
             info!("time_all: {}", time_all.percentile(90.0).unwrap());
             info!("time_database_ops: {}", time_database_ops.percentile(90.0).unwrap());
+            info!("time_database_games: {}", time_database_games.percentile(90.0).unwrap());
+            info!("time_database_moves: {}", time_database_moves.percentile(90.0).unwrap());
         }
     }
 }
