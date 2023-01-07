@@ -1,4 +1,4 @@
-// current performance: 0.36/second
+// current performance: 0.7/second
 
 use {
     std::sync::Arc,
