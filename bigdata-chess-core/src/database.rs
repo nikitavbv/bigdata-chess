@@ -20,6 +20,7 @@ impl Database {
     pub async fn new(config: &DatabaseConfig) -> Self {
         info!("connecting to database...");
 
+        // for some reason, adding a connection pool had negative impact on performance
         let (client, connection) = tokio_postgres::connect(config.connection_string().unwrap(), NoTls).await.unwrap();
 
         tokio::spawn(async move {
