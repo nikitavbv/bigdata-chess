@@ -1,11 +1,12 @@
 // current performance: 0.7/second
-
 use {
     std::{sync::Arc, time::Instant},
     tracing::info,
     prost::Message as ProstMessage,
     rdkafka::{message::Message, consumer::{Consumer, CommitMode}},
     histogram::Histogram,
+    futures_util::stream::FuturesUnordered,
+    futures::StreamExt,
     bigdata_chess_core::{
         queue::{Queue, TOPIC_CHESS_GAMES},
         database::Database,
@@ -45,21 +46,28 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
 
         let mut entry_index = 0;
         let mut database_moves_millis = 0;
+
+        let mut futures = Vec::new();
+
         for entry in &game.game_entries {
             entry_index += 1;
             if let Some(san) = &entry.san {
                 if let Some(normal) = &san.normal {
                     let key = format!("{}:{}", game_id, entry_index);
                     let game_move_entity = into_chess_game_move_entity(key, &game_id, normal);
-
-                    let started_at = Instant::now();
-                    database.save_game_move(&game_move_entity).await;
-                    let time_spent = (Instant::now() - started_at).as_millis();
-                    database_ops_millis += time_spent;
-                    database_moves_millis += time_spent;
+                    futures.push(database.save_game_move(game_move_entity));
                 }
             }
         }
+        
+        {
+            let started_at = Instant::now();
+            let stream = futures::stream::iter(futures.into_iter()).buffer_unordered(2).collect::<Vec<_>>().await;
+            let time_spent = (Instant::now() - started_at).as_millis();
+            database_ops_millis += time_spent;
+            database_moves_millis += time_spent;
+        }
+
         time_database_moves.increment(database_moves_millis as u64).unwrap();
 
         let game_entity = into_chess_game_entity(game_id, game);

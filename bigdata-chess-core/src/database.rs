@@ -1,4 +1,5 @@
 use {
+    std::pin::Pin,
     tracing::info,
     sqlx::postgres::PgPoolOptions,
     tokio_postgres::{NoTls, Socket, tls::NoTlsStream, Statement},
@@ -53,7 +54,7 @@ impl Database {
             .unwrap();
     }
 
-    pub async fn save_game_move(&self, game_move: &ChessGameMoveEntity) {
+    pub async fn save_game_move(&self, game_move: ChessGameMoveEntity) {
         self.client.query(&self.statement_insert_game_move, &[
             &game_move.id(),
             &game_move.game_id(),

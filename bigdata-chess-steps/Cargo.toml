@@ -24,4 +24,5 @@ prost-types = "0.11.5"
 pgn-reader = "0.22.0"
 chrono = "0.4.23"
 histogram = "0.6.9"
+futures = "0.3.25"
 bigdata-chess-core = { path = "../bigdata-chess-core" }
