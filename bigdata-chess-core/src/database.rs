@@ -44,7 +44,7 @@ impl Database {
         }
     }
 
-    pub async fn save_game(&self, game: &ChessGameEntity) {
+    pub async fn save_game(&self, game: ChessGameEntity) {
         sqlx::query("insert into chess_games (id, opening, white_player_elo) values ($1, $2, $3) on conflict do nothing")
             .bind(game.id())
             .bind(game.opening())

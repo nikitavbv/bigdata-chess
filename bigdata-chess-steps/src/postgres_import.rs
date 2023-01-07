@@ -6,7 +6,7 @@ use {
     rdkafka::{message::Message, consumer::{Consumer, CommitMode}},
     histogram::Histogram,
     futures_util::stream::FuturesUnordered,
-    futures::{StreamExt, future::join_all},
+    futures::{StreamExt, FutureExt, future::join_all},
     bigdata_chess_core::{
         queue::{Queue, TOPIC_CHESS_GAMES},
         database::Database,
@@ -29,8 +29,6 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
 
     let mut time_all = Histogram::new();
     let mut time_database_ops = Histogram::new();
-    let mut time_database_moves = Histogram::new();
-    let mut time_database_games = Histogram::new();
 
     let mut processed_games = 0;
 
@@ -45,7 +43,6 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
         let game_id = base64::encode(msg.key().unwrap());
 
         let mut entry_index = 0;
-        let mut database_moves_millis = 0;
 
         let mut futures = Vec::new();
 
@@ -55,29 +52,19 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
                 if let Some(normal) = &san.normal {
                     let key = format!("{}:{}", game_id, entry_index);
                     let game_move_entity = into_chess_game_move_entity(key, &game_id, normal);
-                    futures.push(database.save_game_move(game_move_entity));
+                    futures.push(database.save_game_move(game_move_entity).boxed());
                 }
             }
         }
         
+        let game_entity = into_chess_game_entity(game_id, game);
+        futures.push(database.save_game(game_entity).boxed());
+
         {
             let started_at = Instant::now();
             join_all(futures).await;
             let time_spent = (Instant::now() - started_at).as_millis();
             database_ops_millis += time_spent;
-            database_moves_millis += time_spent;
-        }
-
-        time_database_moves.increment(database_moves_millis as u64).unwrap();
-
-        let game_entity = into_chess_game_entity(game_id, game);
-        
-        {
-            let started_at = Instant::now();
-            database.save_game(&game_entity).await;
-            let time_spent = (Instant::now() - started_at).as_millis();
-            database_ops_millis += time_spent;
-            time_database_games.increment(time_spent as u64).unwrap();
         }
         
         consumer.commit_message(&msg, CommitMode::Sync).unwrap();
@@ -91,8 +78,6 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
         if processed_games % 1000 == 0 {
             info!("time_all: {}", time_all.percentile(90.0).unwrap());
             info!("time_database_ops: {}", time_database_ops.percentile(90.0).unwrap());
-            info!("time_database_games: {}", time_database_games.percentile(90.0).unwrap());
-            info!("time_database_moves: {}", time_database_moves.percentile(90.0).unwrap());
         }
     }
 }
