@@ -13,7 +13,10 @@ pub async fn hdfs_import_step(storage: Arc<Storage>) {
         let mut synced_keys = HashSet::new();
 
         let games_in_remote_storage = storage.remote_list_game_data_files().await.unwrap();
+        let mut total_games_synced = 0;
         for game_in_remote_storage in games_in_remote_storage {
+            total_games_synced += 1;
+            
             if !keys_in_local_storage.contains(&game_in_remote_storage) {
                 synced_keys.insert(game_in_remote_storage.clone());
                 
@@ -34,10 +37,15 @@ pub async fn hdfs_import_step(storage: Arc<Storage>) {
             } else {
                 info!("game already synced: {}", game_in_remote_storage);
             }
+
+            info!("total games synced: {}", total_games_synced);
         }
 
         let game_moves_in_remote_storage = storage.remote_list_game_moves_files().await.unwrap();
+        let mut total_game_moves_synced = 0;
         for game_move_in_remote_storage in game_moves_in_remote_storage {
+            total_game_moves_synced += 1;
+
             if !keys_in_local_storage.contains(&game_move_in_remote_storage) {
                 synced_keys.insert(game_move_in_remote_storage.clone());
 
@@ -58,6 +66,8 @@ pub async fn hdfs_import_step(storage: Arc<Storage>) {
             } else {
                 info!("game moves already synced: {}", game_move_in_remote_storage);
             }
+
+            info!("total game moves synced: {}", total_game_moves_synced);
         }
 
         info!("sleeping before the next iteration");
@@ -70,7 +80,7 @@ async fn hdfs_put(local_file_path: &str, table_name: &str) {
         .arg("fs")
         .arg("-put")
         .arg(local_file_path)
-        .arg(format!("/tables_data/{}", table_name))
+        .arg(format!("/tables_data/{}/", table_name))
         .spawn()
         .unwrap();
     let status = child.wait().await.unwrap();
