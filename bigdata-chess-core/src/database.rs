@@ -1,4 +1,5 @@
 use {
+    tracing::info,
     sqlx::postgres::PgPoolOptions,
     tokio_postgres::{NoTls, Socket, tls::NoTlsStream, Statement},
     crate::{
@@ -17,10 +18,13 @@ pub struct Database {
 
 impl Database {
     pub async fn new(config: &DatabaseConfig) -> Self {
+        info!("connecting to database...");
+
         let (client, connection) = tokio_postgres::connect(config.connection_string().unwrap(), NoTls).await.unwrap();
 
         let statement_insert_game_move = client.prepare("insert into chess_game_moves (id, game_id, from_file, from_rank, to_file, to_rank) values ($1, $2, $3, $4, $5, $6)").await.unwrap();
 
+        info!("connected to database");
         Self {
             pool: PgPoolOptions::new()
                 .max_connections(5)
