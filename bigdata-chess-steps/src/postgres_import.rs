@@ -1,10 +1,11 @@
 // current performance: 0.7/second
 
 use {
-    std::sync::Arc,
+    std::{sync::Arc, time::Instant},
     tracing::info,
     prost::Message as ProstMessage,
     rdkafka::{message::Message, consumer::{Consumer, CommitMode}},
+    histogram::Histogram,
     bigdata_chess_core::{
         queue::{Queue, TOPIC_CHESS_GAMES},
         database::Database,
@@ -25,7 +26,15 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
 
     let mut progress = Progress::new("processing games".to_owned());
 
+    let mut time_all = Histogram::new();
+    let mut time_database_ops = Histogram::new();
+
+    let mut processed_games = 0;
+
     loop {
+        let started_at = Instant::now();
+        let mut database_ops_millis = 0;
+
         let msg = consumer.recv().await.unwrap();
         let payload = msg.payload().unwrap();
 
@@ -39,16 +48,32 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
                 if let Some(normal) = &san.normal {
                     let key = format!("{}:{}", game_id, entry_index);
                     let game_move_entity = into_chess_game_move_entity(key, &game_id, normal);
+
+                    let started_at = Instant::now();
                     database.save_game_move(&game_move_entity).await;
+                    database_ops_millis += (Instant::now() - started_at).as_millis();
                 }
             }
         }
         let game_entity = into_chess_game_entity(game_id, game);
         
-        database.save_game(&game_entity).await;
-
+        {
+            let started_at = Instant::now();
+            database.save_game(&game_entity).await;
+            database_ops_millis += (Instant::now() - started_at).as_millis();    
+        }
+        
         consumer.commit_message(&msg, CommitMode::Sync).unwrap();
         
         progress.update();
+        processed_games += 1;
+
+        time_all.increment((Instant::now() - started_at).as_millis() as u64).unwrap();
+        time_database_ops.increment(database_ops_millis as u64).unwrap();
+
+        if processed_games % 100 == 0 {
+            info!("time_all: {}", time_all.percentile(90.0).unwrap());
+            info!("time_database_ops: {}", time_database_ops.percentile(90.0).unwrap());
+        }
     }
 }
