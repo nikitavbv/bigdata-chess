@@ -62,7 +62,7 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
         
         {
             let started_at = Instant::now();
-            let stream = futures::stream::iter(futures.into_iter()).buffer_unordered(32).collect::<Vec<_>>().await;
+            let stream = futures::stream::iter(futures.into_iter()).collect::<Vec<_>>().await;
             let time_spent = (Instant::now() - started_at).as_millis();
             database_ops_millis += time_spent;
             database_moves_millis += time_spent;
