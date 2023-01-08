@@ -1,5 +1,3 @@
-use prost::encoding::message;
-
 use {
     std::{sync::Arc, time::Instant, collections::VecDeque},
     tracing::{info, error},

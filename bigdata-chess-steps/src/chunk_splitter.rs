@@ -2,8 +2,7 @@ use {
     std::{
         sync::Arc, 
         io::Read, 
-        time::Duration, 
-        collections::hash_map::DefaultHasher, 
+        collections::{hash_map::DefaultHasher, VecDeque},
         hash::Hasher,
         time::Instant,
     },
@@ -19,11 +18,12 @@ use {
         storage::Storage,
         queue::{Queue, StreamingContext, TOPIC_LICHESS_DATA_FILES_SYNCED, SyncedFileMessage, TOPIC_LICHESS_RAW_GAMES},
         data::RawChessGame,
+        config::ChunkSplitterStepConfig,
     },
     crate::progress::Progress,
 };
 
-pub async fn chunk_splitter_step(storage: Arc<Storage>, queue: Arc<Queue>) -> std::io::Result<()> {
+pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<Storage>, queue: Arc<Queue>) -> std::io::Result<()> {
     info!("hello from chunk splitter!");
 
     let consumer: StreamConsumer<StreamingContext> = ClientConfig::new()
@@ -36,6 +36,8 @@ pub async fn chunk_splitter_step(storage: Arc<Storage>, queue: Arc<Queue>) -> st
         .create_with_context(StreamingContext)
         .unwrap();
     consumer.subscribe(&vec![TOPIC_LICHESS_DATA_FILES_SYNCED]).unwrap();
+
+    let to_topic = config.to_topic().clone();
 
     let producer = queue.producer();
     let mut progress = Progress::new("processing games".to_owned());
@@ -53,7 +55,14 @@ pub async fn chunk_splitter_step(storage: Arc<Storage>, queue: Arc<Queue>) -> st
         let mut pgn = String::new();
         let mut buf = vec![0; 1024];
 
+        let mut time_total : f64 = 0.0;
+        let mut time_io: f64 = 0.0;
+
+        let mut message_join_handles = VecDeque::new();
+
         loop {
+            let started_at = Instant::now();
+
             let res = decoder.read(&mut buf).unwrap();
             pgn.push_str(&String::from_utf8_lossy(&buf));
 
@@ -81,14 +90,29 @@ pub async fn chunk_splitter_step(storage: Arc<Storage>, queue: Arc<Queue>) -> st
                         let mut hasher = DefaultHasher::new();
                         hasher.write(&encoded_game);
 
-                        producer.send(
-                            FutureRecord::to(TOPIC_LICHESS_RAW_GAMES)
-                                .payload(&encoded_game)
-                                .key(&hasher.finish().to_string()),
-                            Duration::from_secs(0)
-                        ).await.unwrap();
+                        let io_started_at = Instant::now();
 
-                        progress.update();
+                        let queue = queue.clone();
+                        let to_topic = to_topic.clone();
+                        let message_future = async move {
+                            queue.send_message(
+                                FutureRecord::to(&to_topic)
+                                    .payload(&encoded_game)
+                                    .key(&hasher.finish().encode_to_vec())).await
+                        };
+                        let task_join_handle = tokio::spawn(message_future);
+                        message_join_handles.push_back(task_join_handle);
+
+                        while message_join_handles.len() >= 2 {
+                            message_join_handles.pop_front().unwrap().await.unwrap();
+                        }
+
+                        time_io += (Instant::now() - io_started_at).as_secs_f64();
+
+                        if progress.update() {
+                            info!("time_total: {}", time_total.round());
+                            info!("time_io: {}", time_io.round());
+                        }
                     } else {
                         found_something = false;
                     }
@@ -96,6 +120,8 @@ pub async fn chunk_splitter_step(storage: Arc<Storage>, queue: Arc<Queue>) -> st
                     found_something = false;
                 }
             }
+
+            time_total += (Instant::now() - started_at).as_secs_f64();
 
             if res == 0 {
                 break;

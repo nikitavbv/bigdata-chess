@@ -21,7 +21,7 @@ impl Progress {
         }
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self) -> bool {
         self.total_processed += 1;
 
         let now = Instant::now();
@@ -29,6 +29,9 @@ impl Progress {
             self.reported_at = now;
             let rate = (self.total_processed as f32) / (now - self.started_at).as_secs_f32();
             info!("{}: {} total ({:.2}/second)", self.message, self.total_processed, rate);
+            true
+        } else {
+            false
         }
     }
 }
