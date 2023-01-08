@@ -39,7 +39,6 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
 
     let to_topic = config.to_topic().clone();
 
-    let producer = queue.producer();
     let mut progress = Progress::new("processing games".to_owned());
 
     loop {
@@ -57,6 +56,10 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
 
         let mut time_total : f64 = 0.0;
         let mut time_io: f64 = 0.0;
+
+        let mut games_produced = 0;
+        let games_to_skip = storage.get_lichess_data_file_chunk_splitting_state(payload.path().to_owned()).await;
+        let mut state_sync_time = Instant::now();
 
         let mut message_join_handles = VecDeque::new();
 
@@ -90,28 +93,39 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
                         let mut hasher = DefaultHasher::new();
                         hasher.write(&encoded_game);
 
-                        let io_started_at = Instant::now();
+                        games_produced += 1;
 
-                        let queue = queue.clone();
-                        let to_topic = to_topic.clone();
-                        let message_future = async move {
-                            queue.send_message(
-                                FutureRecord::to(&to_topic)
-                                    .payload(&encoded_game)
-                                    .key(&hasher.finish().encode_to_vec())).await
-                        };
-                        let task_join_handle = tokio::spawn(message_future);
-                        message_join_handles.push_back(task_join_handle);
+                        if games_produced < games_to_skip {
+                            let io_started_at = Instant::now();
 
-                        while message_join_handles.len() >= 2 {
-                            message_join_handles.pop_front().unwrap().await.unwrap();
-                        }
+                            let queue = queue.clone();
+                            let to_topic = to_topic.clone();
+                            let message_future = async move {
+                                queue.send_message(
+                                    FutureRecord::to(&to_topic)
+                                        .payload(&encoded_game)
+                                        .key(&hasher.finish().encode_to_vec())).await
+                            };
+                            let task_join_handle = tokio::spawn(message_future);
+                            message_join_handles.push_back(task_join_handle);
+    
+                            while message_join_handles.len() >= 4 {
+                                games_produced += 1;
+                                message_join_handles.pop_front().unwrap().await.unwrap();
+                            }
+    
+                            time_io += (Instant::now() - io_started_at).as_secs_f64();
 
-                        time_io += (Instant::now() - io_started_at).as_secs_f64();
+                            let now = Instant::now();
+                            if (now - state_sync_time).as_secs_f32() > 60.0 {
+                                storage.put_lichess_data_file_chunk_splitting_state(payload.path().to_owned(), games_produced).await;
+                                state_sync_time = now;
+                            }
 
-                        if progress.update() {
-                            info!("time_total: {}", time_total.round());
-                            info!("time_io: {}", time_io.round());
+                            if progress.update() {
+                                info!("time_total: {}", time_total.round());
+                                info!("time_io: {}", time_io.round());
+                            }
                         }
                     } else {
                         found_something = false;

@@ -41,6 +41,17 @@ impl Storage {
         self.bucket.put_object(format!("{}/metadata", path), metadata.as_bytes()).await.unwrap();
     }
 
+    pub async fn put_lichess_data_file_chunk_splitting_state(&self, path: String, processed_games: u64) {
+        self.bucket.put_object(format!("{}/chunk_splitting_state", path), processed_games.to_string().as_bytes()).await.unwrap();
+    }
+
+    pub async fn get_lichess_data_file_chunk_splitting_state(&self, path: String) -> u64 {
+        self.bucket.get_object(format!("{}/chunk_splitting_state", path)).await
+            .ok()
+            .and_then(|v| v.as_str().unwrap().parse().ok())
+            .unwrap_or(0)
+    }
+
     pub async fn is_lichess_data_file_metadata_present(&self, path: String) -> bool {
         self.bucket.get_object(format!("{}/metadata", path)).await.is_ok()
     }

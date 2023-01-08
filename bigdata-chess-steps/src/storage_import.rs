@@ -15,7 +15,7 @@ use {
     crate::progress::Progress,
 };
 
-const GAMES_PER_FILE: u64 = 20_000;
+const GAMES_PER_FILE: u64 = 40_000;
 const MOVES_PER_FILE: u64 = GAMES_PER_FILE * 50;
 
 #[allow(dead_code)] // used from other crate
