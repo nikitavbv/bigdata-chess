@@ -1,4 +1,4 @@
-// performance: 92 games/sec
+// performance: 112 games/sec
 
 use {
     std::{sync::Arc, time::Instant, collections::VecDeque},
@@ -53,6 +53,7 @@ pub async fn game_parser_step(config: &GameParserStepConfig, queue: Arc<Queue>) 
 
     let mut time_total: f64 = 0.0;
     let mut time_message_recv: f64 = 0.0;
+    let mut time_encode_decode: f64 = 0.0;
     let mut time_io: f64 = 0.0;
 
     loop {
@@ -63,6 +64,7 @@ pub async fn game_parser_step(config: &GameParserStepConfig, queue: Arc<Queue>) 
         let payload = msg.payload().unwrap();
         time_message_recv += (Instant::now() - message_recv_started_at).as_secs_f64();
 
+        let encode_decode_started_at = Instant::now();
         let raw_game = RawChessGame::decode(payload).unwrap();
         let pgn = format!("{}\n\n{}", raw_game.metadata, raw_game.moves);
 
@@ -80,6 +82,7 @@ pub async fn game_parser_step(config: &GameParserStepConfig, queue: Arc<Queue>) 
                 continue;
             },
         };
+        time_encode_decode += (Instant::now() - encode_decode_started_at).as_secs_f64();
 
         let io_started_at = Instant::now();
 
@@ -103,6 +106,7 @@ pub async fn game_parser_step(config: &GameParserStepConfig, queue: Arc<Queue>) 
         if progress.update() {
             info!("time_total: {}", time_total.round());
             info!("time_message_recv: {}", time_message_recv.round());
+            info!("time_encode_decode: {}", time_encode_decode.round());
             info!("time_io: {}", time_io.round());
         }
 
