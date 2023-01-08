@@ -55,6 +55,7 @@ pub async fn game_parser_step(config: &GameParserStepConfig, queue: Arc<Queue>) 
     let mut time_message_recv: f64 = 0.0;
     let mut time_encode_decode: f64 = 0.0;
     let mut time_io: f64 = 0.0;
+    let mut time_commit_offsets: f64 = 0.0;
 
     loop {
         let started_at = Instant::now();
@@ -101,13 +102,16 @@ pub async fn game_parser_step(config: &GameParserStepConfig, queue: Arc<Queue>) 
 
         time_io += (Instant::now() - io_started_at).as_secs_f64();
 
+        let commit_message_started_at = Instant::now();
         consumer.commit_message(&msg, CommitMode::Sync).unwrap();
+        time_commit_offsets += (Instant::now() - commit_message_started_at).as_secs_f64();
 
         if progress.update() {
             info!("time_total: {}", time_total.round());
             info!("time_message_recv: {}", time_message_recv.round());
             info!("time_encode_decode: {}", time_encode_decode.round());
             info!("time_io: {}", time_io.round());
+            info!("time_commit_offsets: {}", time_commit_offsets.round());
         }
 
         time_total += (Instant::now() - started_at).as_secs_f64();
