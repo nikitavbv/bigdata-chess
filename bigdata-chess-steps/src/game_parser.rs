@@ -1,4 +1,4 @@
-// performance: 112 games/sec
+// performance: 167 games/sec
 
 use {
     std::{sync::Arc, time::Instant, collections::VecDeque},
