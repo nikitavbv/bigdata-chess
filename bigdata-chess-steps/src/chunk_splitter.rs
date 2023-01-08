@@ -22,7 +22,7 @@ use {
     },
 };
 
-async fn chunk_splitter_step(storage: Arc<Storage>, queue: Arc<Queue>) -> std::io::Result<()> {
+pub async fn chunk_splitter_step(storage: Arc<Storage>, queue: Arc<Queue>) -> std::io::Result<()> {
     info!("hello from chunk splitter!");
 
     let consumer: StreamConsumer<StreamingContext> = ClientConfig::new()
