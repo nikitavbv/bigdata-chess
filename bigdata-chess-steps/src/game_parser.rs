@@ -1,5 +1,7 @@
+use prost::encoding::message;
+
 use {
-    std::{sync::Arc, time::Instant},
+    std::{sync::Arc, time::Instant, collections::VecDeque},
     tracing::{info, error},
     rdkafka::{consumer::{Consumer, CommitMode}, Message, producer::FutureRecord},
     prost::Message as ProstMessage,
@@ -34,6 +36,7 @@ use {
             Comment,
         },
     },
+    crate::progress::Progress,
 };
 
 pub async fn game_parser_step(queue: Arc<Queue>) -> std::io::Result<()> {
@@ -42,9 +45,9 @@ pub async fn game_parser_step(queue: Arc<Queue>) -> std::io::Result<()> {
     let consumer = queue.consumer("bigdata-chess-game-parser");
     consumer.subscribe(&vec![TOPIC_LICHESS_RAW_GAMES]).unwrap();
 
-    let mut total_games_processed = 0;
-    let started_at = Instant::now();
-    let mut report_time = Instant::now();
+    let mut progress = Progress::new("processed games".to_owned());
+
+    let mut message_join_handles = VecDeque::new();
 
     loop {
         let msg = consumer.recv().await.unwrap();
@@ -68,16 +71,21 @@ pub async fn game_parser_step(queue: Arc<Queue>) -> std::io::Result<()> {
             },
         };
 
-        queue.send_message(FutureRecord::to(TOPIC_CHESS_GAMES).payload(&game).key(&random_game_key())).await;
+        let queue = queue.clone();
+        let message_future = async move {
+            queue.send_message(FutureRecord::to(TOPIC_CHESS_GAMES).payload(&game).key(&random_game_key())).await;
+        };
+
+        let task_future = tokio::spawn(message_future);
+        message_join_handles.push_back(task_future);
+
+        while message_join_handles.len() >= 2 {
+            message_join_handles.pop_front().unwrap().await.unwrap();
+        }
+
         consumer.commit_message(&msg, CommitMode::Sync).unwrap();
 
-        total_games_processed += 1;
-        let now = Instant::now();
-        if (now - report_time).as_millis() > 1000 {
-            let seconds_since_start = (now - started_at).as_secs();
-            report_time = now;
-            info!("total games processed: {} (avg. {} games per sec)", total_games_processed, total_games_processed / seconds_since_start);
-        }
+        progress.update();
     }
 }
 
