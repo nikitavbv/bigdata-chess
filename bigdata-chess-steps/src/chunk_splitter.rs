@@ -20,6 +20,7 @@ use {
         queue::{Queue, StreamingContext, TOPIC_LICHESS_DATA_FILES_SYNCED, SyncedFileMessage, TOPIC_LICHESS_RAW_GAMES},
         data::RawChessGame,
     },
+    crate::progress::Progress,
 };
 
 pub async fn chunk_splitter_step(storage: Arc<Storage>, queue: Arc<Queue>) -> std::io::Result<()> {
@@ -37,6 +38,7 @@ pub async fn chunk_splitter_step(storage: Arc<Storage>, queue: Arc<Queue>) -> st
     consumer.subscribe(&vec![TOPIC_LICHESS_DATA_FILES_SYNCED]).unwrap();
 
     let producer = queue.producer();
+    let mut progress = Progress::new("processing games".to_owned());
 
     loop {
         let msg = consumer.recv().await.unwrap();
@@ -50,10 +52,6 @@ pub async fn chunk_splitter_step(storage: Arc<Storage>, queue: Arc<Queue>) -> st
         
         let mut pgn = String::new();
         let mut buf = vec![0; 1024];
-
-        let mut total_games_processed = 0;
-        let started_at = Instant::now();
-        let mut report_time = Instant::now();
 
         loop {
             let res = decoder.read(&mut buf).unwrap();
@@ -90,14 +88,7 @@ pub async fn chunk_splitter_step(storage: Arc<Storage>, queue: Arc<Queue>) -> st
                             Duration::from_secs(0)
                         ).await.unwrap();
 
-                        total_games_processed += 1;
-
-                        let now = Instant::now();
-                        if (now - report_time).as_millis() > 1000 {
-                            let seconds_since_start = (now - started_at).as_secs();
-                            report_time = now;
-                            info!("total games processed: {} (avg. {} games per sec)", total_games_processed, total_games_processed / seconds_since_start);
-                        }
+                        progress.update();
                     } else {
                         found_something = false;
                     }
