@@ -33,7 +33,6 @@ pub async fn storage_import_step(queue: Arc<Queue>, storage: Arc<Storage>) {
     let mut comment_evals = Vec::new();
 
     let mut time_total: f64 = 0.0;
-    let mut time_commit_offsets: f64 = 0.0;
 
     loop {
         let started_at = Instant::now();
@@ -59,13 +58,8 @@ pub async fn storage_import_step(queue: Arc<Queue>, storage: Arc<Storage>) {
         }
         games.push(into_chess_game_entity(game_id, game));
 
-        let commit_message_started_at = Instant::now();
-        consumer.commit_message(&msg, CommitMode::Async).unwrap();
-        time_commit_offsets += (Instant::now() - commit_message_started_at).as_secs_f64();
-
         if progress.update() {
             info!("time_total: {}", time_total.round());
-            info!("time_commit_offsets: {}", time_commit_offsets.round());
         }
         
         while games.len() > GAMES_PER_FILE as usize {
