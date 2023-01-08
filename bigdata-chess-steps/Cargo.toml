@@ -25,4 +25,5 @@ pgn-reader = "0.22.0"
 chrono = "0.4.23"
 histogram = "0.6.9"
 futures = "0.3.25"
+zstd = "0.12.0+zstd.1.5.2"
 bigdata-chess-core = { path = "../bigdata-chess-core" }

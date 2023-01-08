@@ -1,3 +1,4 @@
+pub mod chunk_splitter;
 pub mod file_downloader;
 pub mod game_parser;
 pub mod hdfs_import;
