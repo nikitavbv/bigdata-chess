@@ -1,3 +1,5 @@
+// performance: 92 games/sec
+
 use {
     std::{sync::Arc, time::Instant, collections::VecDeque},
     tracing::{info, error},
@@ -49,7 +51,12 @@ pub async fn game_parser_step(config: &GameParserStepConfig, queue: Arc<Queue>) 
 
     let mut message_join_handles = VecDeque::new();
 
+    let mut time_total : f64 = 0.0;
+    let mut time_io: f64 = 0.0;
+
     loop {
+        let started_at = Instant::now();
+
         let msg = consumer.recv().await.unwrap();
         let payload = msg.payload().unwrap();
 
@@ -71,6 +78,8 @@ pub async fn game_parser_step(config: &GameParserStepConfig, queue: Arc<Queue>) 
             },
         };
 
+        let io_started_at = Instant::now();
+
         let queue = queue.clone();
         let to_topic = to_topic.clone();
         let message_future = async move {
@@ -80,13 +89,20 @@ pub async fn game_parser_step(config: &GameParserStepConfig, queue: Arc<Queue>) 
         let task_future = tokio::spawn(message_future);
         message_join_handles.push_back(task_future);
 
-        while message_join_handles.len() >= 2 {
+        while message_join_handles.len() >= 4 {
             message_join_handles.pop_front().unwrap().await.unwrap();
         }
 
+        time_io += (Instant::now() - io_started_at).as_secs_f64();
+
         consumer.commit_message(&msg, CommitMode::Sync).unwrap();
 
-        progress.update();
+        if progress.update() {
+            info!("time_total: {}", time_total.round());
+            info!("time_io: {}", time_io.round());
+        }
+
+        time_total += (Instant::now() - started_at).as_secs_f64();
     }
 }
 
