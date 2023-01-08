@@ -7,11 +7,14 @@ use {
     bigdata_chess_core::{
         queue::{Queue, TOPIC_CHESS_GAMES},
         storage::Storage,
-        entity::{into_chess_game_entity, into_chess_game_move_entity},
+        entity::{into_chess_game_entity, into_chess_game_move_entity, into_chess_game_comment_eval_entity},
         data::ChessGame,
     },
     crate::progress::Progress,
 };
+
+const GAMES_PER_FILE: u64 = 200_000;
+const MOVES_PER_FILE: u64 = GAMES_PER_FILE * 50;
 
 #[allow(dead_code)] // used from other crate
 pub async fn storage_import_step(queue: Arc<Queue>, storage: Arc<Storage>) {
@@ -25,6 +28,7 @@ pub async fn storage_import_step(queue: Arc<Queue>, storage: Arc<Storage>) {
     let mut progress = Progress::new("processing games".to_owned());
     let mut games = Vec::new();
     let mut moves = Vec::new();
+    let mut comment_evals = Vec::new();
 
     loop {
         let msg = consumer.recv().await.unwrap();
@@ -38,9 +42,11 @@ pub async fn storage_import_step(queue: Arc<Queue>, storage: Arc<Storage>) {
             entry_index += 1;
             if let Some(san) = &entry.san {
                 if let Some(normal) = &san.normal {
-                    let key = format!("{}:{}", game_id, entry_index);
-
-                    moves.push(into_chess_game_move_entity(key, &game_id, &normal));
+                    moves.push(into_chess_game_move_entity(&game_id,  entry_index,&normal, san.is_check.unwrap_or(false), san.is_checkmate.unwrap_or(false)));
+                }
+            } else if let Some(comment) = &entry.comment {
+                if let Some(eval) = comment.eval {
+                    comment_evals.push(into_chess_game_comment_eval_entity(&game_id, entry_index, eval));
                 }
             }
         }
@@ -49,7 +55,7 @@ pub async fn storage_import_step(queue: Arc<Queue>, storage: Arc<Storage>) {
         consumer.commit_message(&msg, CommitMode::Sync).unwrap();
         progress.update();
         
-        while games.len() > 100_000 {
+        while games.len() > GAMES_PER_FILE as usize {
             let output_data = {
                 let mut output_data = Vec::new();
 
@@ -69,7 +75,7 @@ pub async fn storage_import_step(queue: Arc<Queue>, storage: Arc<Storage>) {
             info!("uploaded game data file with key: {}", key);
         }
 
-        while moves.len() > 100_000 {
+        while moves.len() > MOVES_PER_FILE as usize {
             let output_data = {
                 let mut output_data = Vec::new();
 
@@ -87,6 +93,25 @@ pub async fn storage_import_step(queue: Arc<Queue>, storage: Arc<Storage>) {
             let key = generate_game_data_file_key();
             storage.put_game_moves_data_file(&key, output_data).await;
             info!("uploaded game moves data file with key: {}", key);
+
+            // comments eval
+            let output_data = {
+                let mut output_data = Vec::new();
+
+                {
+                    let mut csv_writer = csv::Writer::from_writer(&mut output_data);
+                    for comment_eval in &comment_evals {
+                        csv_writer.serialize(&comment_eval).unwrap();
+                    }
+                    comment_evals.clear();
+                }
+
+                output_data
+            };
+
+            let key = generate_game_data_file_key();
+            storage.put_game_comment_eval_data_file(&key, output_data).await;
+            info!("uploaded game eval comments data file with key: {}", key);
         }
     }
 }

@@ -65,6 +65,10 @@ impl Storage {
         self.bucket.put_object(format!("game-data/moves/{}", key), &data).await.unwrap();
     }
 
+    pub async fn put_game_comment_eval_data_file(&self, key: &str, data: Vec<u8>) {
+        self.bucket.put_object(format!("game-data/comments-eval/{}", key), &data).await.unwrap();
+    }
+
     pub async fn remote_list_game_data_files(&self) -> Result<Vec<String>> {
         let res = self.remote_api_request("http://storage.nikitavbv.com/v1/chess-data/game-data/games").await?;
         Ok(res.json().await.unwrap())

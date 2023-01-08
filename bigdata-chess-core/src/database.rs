@@ -67,7 +67,7 @@ impl Database {
 
     pub async fn save_game_move(&self, game_move: ChessGameMoveEntity) {
         self.client.query(&self.statement_insert_game_move, &[
-            &game_move.id(),
+            &format!("{}:{}", game_move.game_id(), game_move.move_id()),
             &game_move.game_id(),
             &game_move.from_file().map(|v| v as i32),
             &game_move.from_rank().map(|v| v as i32),

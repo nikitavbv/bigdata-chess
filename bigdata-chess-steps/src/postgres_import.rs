@@ -52,8 +52,7 @@ async fn run_consumer(queue: Arc<Queue>, database: Database, progress: Arc<Mutex
             entry_index += 1;
             if let Some(san) = &entry.san {
                 if let Some(normal) = &san.normal {
-                    let key = format!("{}:{}", game_id, entry_index);
-                    let game_move_entity = into_chess_game_move_entity(key, &game_id, normal);
+                    let game_move_entity = into_chess_game_move_entity(&game_id, entry_index, normal, san.is_check.unwrap_or(false), san.is_checkmate.unwrap_or(false));
                     futures.push(database.save_game_move(game_move_entity).boxed());
                 }
             }
