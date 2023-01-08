@@ -27,7 +27,7 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
     info!("hello from chunk splitter!");
 
     let consumer: StreamConsumer<StreamingContext> = ClientConfig::new()
-        .set("group.id", "bigdata-chess-chunk-splitter")
+        .set("group.id", config.group_id())
         .set("bootstrap.servers", queue.kafka_endpoint())
         .set("enable.partition.eof", "false")
         .set("session.timeout.ms", "6000")

@@ -40,6 +40,7 @@ pub struct FileDownloaderStepConfig {
 pub struct ChunkSplitterStepConfig {
     pub enabled: bool,
     to_topic: Option<String>,
+    group_id: Option<String>,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -126,6 +127,7 @@ impl Default for ChunkSplitterStepConfig {
         Self {
             enabled: false,
             to_topic: None,
+            group_id: None,
         }
     }
 }
@@ -133,6 +135,10 @@ impl Default for ChunkSplitterStepConfig {
 impl ChunkSplitterStepConfig {
     pub fn to_topic(&self) -> String {
         self.to_topic.as_ref().map(|v| v.to_owned()).unwrap_or(TOPIC_LICHESS_RAW_GAMES.to_owned())
+    }
+
+    pub fn group_id(&self) -> String {
+        self.group_id.as_ref().map(|v| v.to_owned()).unwrap_or("bigdata-chess-chunk-splitter".to_owned())
     }
 }
 
