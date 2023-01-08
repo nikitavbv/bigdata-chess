@@ -103,7 +103,7 @@ pub async fn game_parser_step(config: &GameParserStepConfig, queue: Arc<Queue>) 
         time_io += (Instant::now() - io_started_at).as_secs_f64();
 
         let commit_message_started_at = Instant::now();
-        consumer.commit_message(&msg, CommitMode::Sync).unwrap();
+        consumer.commit_message(&msg, CommitMode::Async).unwrap();
         time_commit_offsets += (Instant::now() - commit_message_started_at).as_secs_f64();
 
         if progress.update() {
