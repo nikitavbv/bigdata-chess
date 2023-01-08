@@ -79,6 +79,11 @@ impl Storage {
         Ok(res.json().await.unwrap())
     }
 
+    pub async fn remote_list_game_comment_eval_files(&self) -> Result<Vec<String>> {
+        let res = self.remote_api_request("http://storage.nikitavbv.com/v1/chess-data/game-data/comments-eval").await?;
+        Ok(res.json().await.unwrap())
+    }
+
     pub async fn remote_game_data_file(&self, key: &str) -> Result<Vec<u8>> {
         let res = self.remote_api_request(&format!("http://storage.nikitavbv.com/v1/chess-data/{}", key)).await?;
         Ok(res.bytes().await.unwrap().to_vec())

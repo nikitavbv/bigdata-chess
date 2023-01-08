@@ -28,16 +28,12 @@ pub async fn hdfs_import_step(config: &HdfsImportStepConfig, storage: Arc<Storag
                 synced_keys.insert(game_in_remote_storage.clone());
                 
                 let file_id = file_name_from_path(&game_in_remote_storage);
-                let local_file_path = format!("./{}.csv", file_id);
 
                 info!("syncing game {}", file_id);
                 let game = storage.remote_game_data_file(&game_in_remote_storage).await.unwrap();
-                fs::write(&local_file_path, game).await.unwrap();
-
-                info!("uploading game into hdfs: {}", file_id);
-                hdfs_put(&local_file_path, "chess_games").await;
-                fs::remove_file(local_file_path).await.unwrap();
             
+                hdfs_put_bytes("chess_games", file_id, game).await;
+
                 let mut all_keys = keys_in_local_storage.clone();
                 all_keys.extend(synced_keys.clone().into_iter());
                 save_sync_state(&all_keys).await;
@@ -63,15 +59,11 @@ pub async fn hdfs_import_step(config: &HdfsImportStepConfig, storage: Arc<Storag
                 synced_keys.insert(game_move_in_remote_storage.clone());
 
                 let file_id = file_name_from_path(&game_move_in_remote_storage);
-                let local_file_path = format!("./{}.csv", file_id);
 
-                info!("syncing game {}", file_id);
+                info!("syncing game moves {}", file_id);
                 let game = storage.remote_game_data_file(&game_move_in_remote_storage).await.unwrap();
-                fs::write(&local_file_path, game).await.unwrap();
 
-                info!("uploading game moves into hdfs: {}", file_id);
-                hdfs_put(&local_file_path, "chess_game_moves").await;
-                fs::remove_file(local_file_path).await.unwrap();
+                hdfs_put_bytes("chess_game_moves",  file_id, game).await;
 
                 let mut all_keys = keys_in_local_storage.clone();
                 all_keys.extend(synced_keys.clone().into_iter());
@@ -83,9 +75,39 @@ pub async fn hdfs_import_step(config: &HdfsImportStepConfig, storage: Arc<Storag
             info!("total game moves synced: {}", total_game_moves_synced);
         }
 
+        let game_eval_comments_in_remote_storage = storage.remote_list_game_comment_eval_files().await.unwrap();
+        for eval_comment in game_eval_comments_in_remote_storage {
+            if !keys_in_local_storage.contains(&eval_comment) {
+                synced_keys.insert(eval_comment.clone());
+
+                let file_id = file_name_from_path(&eval_comment);
+
+                info!("syncing eval comments {}", file_id);
+                let eval_comment_data = storage.remote_game_data_file(&eval_comment).await.unwrap();
+
+                hdfs_put_bytes("chess_game_comments_eval", file_id, eval_comment_data).await;
+                let mut all_keys = keys_in_local_storage.clone();
+                all_keys.extend(synced_keys.clone().into_iter());
+                save_sync_state(&all_keys).await;
+            } else {
+                info!("game eval comments already synced: {}", eval_comment);
+            }
+        }
+
         info!("sleeping before the next iteration");
         sleep(Duration::from_secs(60 * 60)).await;
     }
+}
+
+async fn hdfs_put_bytes(table_name: &str, file_id: String, data: Vec<u8>) {
+    let local_file_path = format!("./{}.csv", file_id);
+
+    fs::write(&local_file_path, data).await.unwrap();
+
+    info!("uploading {} into hdfs: {}", table_name, file_id);
+
+    hdfs_put(&local_file_path, table_name).await;
+    fs::remove_file(local_file_path).await.unwrap();
 }
 
 async fn hdfs_put(local_file_path: &str, table_name: &str) {
