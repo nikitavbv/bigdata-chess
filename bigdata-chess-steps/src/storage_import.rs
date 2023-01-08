@@ -1,3 +1,5 @@
+// current performance: 109 games/second
+
 use {
     std::{sync::Arc, time::Instant},
     tracing::info,
@@ -58,7 +60,7 @@ pub async fn storage_import_step(queue: Arc<Queue>, storage: Arc<Storage>) {
         games.push(into_chess_game_entity(game_id, game));
 
         let commit_message_started_at = Instant::now();
-        consumer.commit_message(&msg, CommitMode::Sync).unwrap();
+        consumer.commit_message(&msg, CommitMode::Async).unwrap();
         time_commit_offsets += (Instant::now() - commit_message_started_at).as_secs_f64();
 
         if progress.update() {
@@ -123,9 +125,9 @@ pub async fn storage_import_step(queue: Arc<Queue>, storage: Arc<Storage>) {
             let key = generate_game_data_file_key();
             storage.put_game_comment_eval_data_file(&key, output_data).await;
             info!("uploaded game eval comments data file with key: {}", key);
-
-            time_total += (Instant::now() - started_at).as_secs_f64();
         }
+
+        time_total += (Instant::now() - started_at).as_secs_f64();
     }
 }
 
