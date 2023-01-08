@@ -2,7 +2,7 @@ use {
     std::fs::read_to_string,
     tracing::warn,
     serde::Deserialize,
-    crate::queue::TOPIC_LICHESS_RAW_GAMES,
+    crate::queue::{TOPIC_LICHESS_RAW_GAMES, TOPIC_CHESS_GAMES},
 };
 
 #[derive(Deserialize, Debug)]
@@ -46,6 +46,9 @@ pub struct ChunkSplitterStepConfig {
 #[derive(Deserialize, Clone, Debug)]
 pub struct GameParserStepConfig {
     pub enabled: bool,
+    from_topic: Option<String>,
+    to_topic: Option<String>,
+    group_id: Option<String>,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -146,7 +149,24 @@ impl Default for GameParserStepConfig {
     fn default() -> Self {
         Self {
             enabled: false,
+            from_topic: None,
+            to_topic: None,
+            group_id: None,
         }
+    }
+}
+
+impl GameParserStepConfig {
+    pub fn from_topic(&self) -> String {
+        self.from_topic.as_ref().map(|v| v.to_owned()).unwrap_or(TOPIC_LICHESS_RAW_GAMES.to_owned())
+    }
+
+    pub fn to_topic(&self) -> String {
+        self.to_topic.as_ref().map(|v| v.to_owned()).unwrap_or(TOPIC_CHESS_GAMES.to_owned())
+    }
+
+    pub fn group_id(&self) -> String {
+        self.group_id.as_ref().map(|v| v.to_owned()).unwrap_or("bigdata-chess-game-parser".to_owned())
     }
 }
 

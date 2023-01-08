@@ -33,15 +33,17 @@ use {
             Nag,
             Comment,
         },
+        config::GameParserStepConfig,
     },
     crate::progress::Progress,
 };
 
-pub async fn game_parser_step(queue: Arc<Queue>) -> std::io::Result<()> {
+pub async fn game_parser_step(config: &GameParserStepConfig, queue: Arc<Queue>) -> std::io::Result<()> {
     info!("running game parser step");
 
-    let consumer = queue.consumer("bigdata-chess-game-parser");
-    consumer.subscribe(&vec![TOPIC_LICHESS_RAW_GAMES]).unwrap();
+    let consumer = queue.consumer(&config.group_id());
+    consumer.subscribe(&vec![config.from_topic().as_str()]).unwrap();
+    let to_topic = config.to_topic();
 
     let mut progress = Progress::new("processed games".to_owned());
 
@@ -70,8 +72,9 @@ pub async fn game_parser_step(queue: Arc<Queue>) -> std::io::Result<()> {
         };
 
         let queue = queue.clone();
+        let to_topic = to_topic.clone();
         let message_future = async move {
-            queue.send_message(FutureRecord::to(TOPIC_CHESS_GAMES).payload(&game).key(&random_game_key())).await;
+            queue.send_message(FutureRecord::to(&to_topic).payload(&game).key(&random_game_key())).await;
         };
 
         let task_future = tokio::spawn(message_future);

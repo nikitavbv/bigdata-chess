@@ -25,7 +25,7 @@ impl Progress {
         self.total_processed += 1;
 
         let now = Instant::now();
-        if (now - self.reported_at).as_millis() >= 1000 {
+        if (now - self.reported_at).as_millis() >= 10_000 {
             self.reported_at = now;
             let rate = (self.total_processed as f32) / (now - self.started_at).as_secs_f32();
             info!("{}: {} total ({:.2}/second)", self.message, self.total_processed, rate);
