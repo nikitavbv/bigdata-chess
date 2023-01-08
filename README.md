@@ -18,3 +18,45 @@ hive workers: 2 -> 4 -> 8 -> 16
 ## infrastructure notes
 
 - it seems that redpanda requires >4GB of ram. It hanged when running on 4GB instance.
+
+### kafka topics
+
+- `chess-lichess-data-files`
+Data files incoming from the lichess
+
+```
+rpk topic create chess-lichess-data-files -c cleanup.policy=compact -r 1 -p 24
+```
+
+Reset file downloader offsets:
+```
+rpk group seek bigdata-chess-file-downloader --to start
+```
+
+- `chess-lichess-data-files-synced`
+Data files downloaded from lichess
+
+```
+rpk topic create chess-lichess-data-files-synced -r 1 -p 24
+```
+
+- `chess-lichess-raw-games`
+Raw games
+
+```
+rpk topic create chess-lichess-raw-games -r 1 -p 24
+```
+
+- `chess-games`
+Parsed games
+
+```
+rpk topic create chess-games -r 1 -p 24
+```
+
+- `chess-game-parser-errors`
+Errors of game parser step
+
+```
+rpk topic create chess-game-parser-errors -r 1 -p 1
+```
