@@ -110,7 +110,6 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
                             message_join_handles.push_back(task_join_handle);
     
                             while message_join_handles.len() >= 4 {
-                                games_produced += 1;
                                 message_join_handles.pop_front().unwrap().await.unwrap();
                             }
     
