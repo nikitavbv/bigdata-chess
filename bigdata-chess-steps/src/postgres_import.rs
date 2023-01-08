@@ -25,13 +25,13 @@ pub async fn postgres_import_step(queue: Arc<Queue>, database: Arc<Database>) {
     
     let mut consumers = Vec::new();
     for _ in 0..4 {
-        consumers.push(run_consumer(queue.clone(), database.clone(), progress.clone()));
+        consumers.push(run_consumer(queue.clone(), database.with_same_config().await, progress.clone()));
     }
 
     join_all(consumers).await;
 }
 
-async fn run_consumer(queue: Arc<Queue>, database: Arc<Database>, progress: Arc<Mutex<Progress>>) {
+async fn run_consumer(queue: Arc<Queue>, database: Database, progress: Arc<Mutex<Progress>>) {
     let consumer = queue.consumer_for_topic(
         "bigdata-chess-postgres-import",
         TOPIC_CHESS_GAMES,

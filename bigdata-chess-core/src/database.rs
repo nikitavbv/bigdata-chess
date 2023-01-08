@@ -8,6 +8,7 @@ use {
 };
 
 pub struct Database {
+    connection_string: String,
     client: tokio_postgres::Client,
 
     statement_insert_game_move: Statement,
@@ -31,9 +32,28 @@ impl Database {
 
         info!("connected to database");
         Self {
+            connection_string: config.connection_string().unwrap().clone(),
             client,
 
             statement_insert_game_move, 
+        }
+    }
+
+    pub async fn with_same_config(&self) -> Self {
+        let (client, connection) = tokio_postgres::connect(&self.connection_string, NoTls).await.unwrap();
+
+        tokio::spawn(async move {
+            if let Err(e) = connection.await {
+                eprintln!("connection error: {}", e);
+            }
+        });
+
+        let statement_insert_game_move = client.prepare("insert into chess_game_moves (id, game_id, from_file, from_rank, to_file, to_rank) values ($1, $2, $3, $4, $5, $6) on conflict do nothing").await.unwrap();
+
+        Self {
+            connection_string: self.connection_string.clone(),
+            client,
+            statement_insert_game_move,
         }
     }
 
