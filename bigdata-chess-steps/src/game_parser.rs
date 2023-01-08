@@ -51,14 +51,17 @@ pub async fn game_parser_step(config: &GameParserStepConfig, queue: Arc<Queue>) 
 
     let mut message_join_handles = VecDeque::new();
 
-    let mut time_total : f64 = 0.0;
+    let mut time_total: f64 = 0.0;
+    let mut time_message_recv: f64 = 0.0;
     let mut time_io: f64 = 0.0;
 
     loop {
         let started_at = Instant::now();
 
+        let message_recv_started_at = Instant::now();
         let msg = consumer.recv().await.unwrap();
         let payload = msg.payload().unwrap();
+        time_message_recv += (Instant::now() - message_recv_started_at).as_secs_f64();
 
         let raw_game = RawChessGame::decode(payload).unwrap();
         let pgn = format!("{}\n\n{}", raw_game.metadata, raw_game.moves);
@@ -99,6 +102,7 @@ pub async fn game_parser_step(config: &GameParserStepConfig, queue: Arc<Queue>) 
 
         if progress.update() {
             info!("time_total: {}", time_total.round());
+            info!("time_message_recv: {}", time_message_recv.round());
             info!("time_io: {}", time_io.round());
         }
 
