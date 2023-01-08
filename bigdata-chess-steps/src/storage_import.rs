@@ -1,5 +1,5 @@
 use {
-    std::sync::Arc,
+    std::{sync::Arc, time::Instant},
     tracing::info,
     rdkafka::{consumer::{Consumer, CommitMode}, Message},
     prost::Message as ProstMessage,
@@ -30,7 +30,12 @@ pub async fn storage_import_step(queue: Arc<Queue>, storage: Arc<Storage>) {
     let mut moves = Vec::new();
     let mut comment_evals = Vec::new();
 
+    let mut time_total: f64 = 0.0;
+    let mut time_commit_offsets: f64 = 0.0;
+
     loop {
+        let started_at = Instant::now();
+
         let msg = consumer.recv().await.unwrap();
         let payload = msg.payload().unwrap();
 
@@ -52,8 +57,14 @@ pub async fn storage_import_step(queue: Arc<Queue>, storage: Arc<Storage>) {
         }
         games.push(into_chess_game_entity(game_id, game));
 
+        let commit_message_started_at = Instant::now();
         consumer.commit_message(&msg, CommitMode::Sync).unwrap();
-        progress.update();
+        time_commit_offsets += (Instant::now() - commit_message_started_at).as_secs_f64();
+
+        if progress.update() {
+            info!("time_total: {}", time_total.round());
+            info!("time_commit_offsets: {}", time_commit_offsets.round());
+        }
         
         while games.len() > GAMES_PER_FILE as usize {
             let output_data = {
@@ -112,6 +123,8 @@ pub async fn storage_import_step(queue: Arc<Queue>, storage: Arc<Storage>) {
             let key = generate_game_data_file_key();
             storage.put_game_comment_eval_data_file(&key, output_data).await;
             info!("uploaded game eval comments data file with key: {}", key);
+
+            time_total += (Instant::now() - started_at).as_secs_f64();
         }
     }
 }
