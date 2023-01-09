@@ -32,7 +32,7 @@ pub async fn hdfs_import_step(config: &HdfsImportStepConfig, storage: Arc<Storag
                 info!("syncing game {}", file_id);
                 let game = storage.remote_game_data_file(&game_in_remote_storage).await.unwrap();
             
-                hdfs_put_bytes("chess_games", file_id, game).await;
+                hdfs_put_bytes(file_id, game).await;
 
                 let mut all_keys = keys_in_local_storage.clone();
                 all_keys.extend(synced_keys.clone().into_iter());
@@ -63,7 +63,7 @@ pub async fn hdfs_import_step(config: &HdfsImportStepConfig, storage: Arc<Storag
                 info!("syncing game moves {}", file_id);
                 let game = storage.remote_game_data_file(&game_move_in_remote_storage).await.unwrap();
 
-                hdfs_put_bytes("chess_game_moves",  file_id, game).await;
+                hdfs_put_bytes(file_id, game).await;
 
                 let mut all_keys = keys_in_local_storage.clone();
                 all_keys.extend(synced_keys.clone().into_iter());
@@ -85,7 +85,7 @@ pub async fn hdfs_import_step(config: &HdfsImportStepConfig, storage: Arc<Storag
                 info!("syncing eval comments {}", file_id);
                 let eval_comment_data = storage.remote_game_data_file(&eval_comment).await.unwrap();
 
-                hdfs_put_bytes("chess_game_comments_eval", file_id, eval_comment_data).await;
+                hdfs_put_bytes(file_id, eval_comment_data).await;
                 let mut all_keys = keys_in_local_storage.clone();
                 all_keys.extend(synced_keys.clone().into_iter());
                 save_sync_state(&all_keys).await;
@@ -99,23 +99,23 @@ pub async fn hdfs_import_step(config: &HdfsImportStepConfig, storage: Arc<Storag
     }
 }
 
-async fn hdfs_put_bytes(table_name: &str, file_id: String, data: Vec<u8>) {
+async fn hdfs_put_bytes(file_id: String, data: Vec<u8>) {
     let local_file_path = format!("./{}.csv", file_id);
 
     fs::write(&local_file_path, data).await.unwrap();
 
-    info!("uploading {} into hdfs: {}", table_name, file_id);
+    info!("uploading into hdfs: {}", file_id);
 
-    hdfs_put(&local_file_path, table_name).await;
+    hdfs_put(&local_file_path, &file_id).await;
     fs::remove_file(local_file_path).await.unwrap();
 }
 
-async fn hdfs_put(local_file_path: &str, table_name: &str) {
+async fn hdfs_put(local_file_path: &str, file_id: &str) {
     let mut child = Command::new("hadoop")
         .arg("fs")
         .arg("-put")
         .arg(local_file_path)
-        .arg(format!("/tables_data/{}/", table_name))
+        .arg(format!("/tables_data/import_data/{}.csv", file_id))
         .spawn()
         .unwrap();
     let status = child.wait().await.unwrap();
