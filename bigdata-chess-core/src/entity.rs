@@ -1,6 +1,7 @@
 use {
     typed_builder::TypedBuilder,
     serde::Serialize,
+    chrono::{NaiveDateTime, NaiveDate},
     crate::data::{ChessGame, NormalSan},
 };
 
@@ -10,6 +11,7 @@ pub struct ChessGameEntity {
     event_name: String,
     link: String,
     date: Option<i64>,
+    day: String, // same as date, but YYYY-MM-DD, to be used for partitioning
     black_player_name: String,
     black_player_elo: u32,
     black_player_title: Option<String>,
@@ -26,6 +28,7 @@ pub struct ChessGameEntity {
     termination: u32,
 }
 
+// in hive: cluster by game_id
 #[derive(TypedBuilder, Serialize)]
 pub struct ChessGameMoveEntity {
     game_id: String,
@@ -40,6 +43,7 @@ pub struct ChessGameMoveEntity {
     is_checkmate: bool,
 }
 
+// in hive: cluster by game_id
 #[derive(TypedBuilder, Serialize)]
 pub struct ChessGameCommentEval {
     game_id: String,
@@ -92,7 +96,11 @@ pub fn into_chess_game_entity(id: String, game: ChessGame) -> ChessGameEntity {
         .id(id)
         .event_name(game.event_name)
         .link(game.link)
-        .date(game.date.map(|v| v.seconds))
+        .date(game.date.as_ref().map(|v| v.seconds))
+        .day(game.date.map(|v| {
+            let naive = NaiveDateTime::from_timestamp_opt(v.seconds, 0).unwrap();
+            naive.format("%Y-%m-%d").to_string()
+        }).unwrap_or("0000-00-00".to_owned()))
         .black_player_name(game.black_player.as_ref().unwrap().name.clone())
         .black_player_elo(game.black_player.as_ref().unwrap().elo)
         .black_player_title(game.black_player.unwrap().title.map(|v| title_name_from_id(v)))
