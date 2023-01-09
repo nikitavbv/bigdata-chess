@@ -56,7 +56,7 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
         let mut pgn = String::new();
         let mut buf = vec![0; 1024];
 
-        let mut time_total : f64 = 0.0;
+        let mut time_total: f64 = 0.0;
         let mut time_io: f64 = 0.0;
 
         let mut games_produced = 0;
@@ -78,7 +78,7 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
             if games_produced == games_to_skip {
                 info!("skipped {} games", games_to_skip);
                 progress.reset();
-                time_total = 0;
+                time_total = 0.0;
             }
 
             while found_something {
