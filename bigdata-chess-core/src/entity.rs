@@ -11,7 +11,6 @@ pub struct ChessGameEntity {
     event_name: String,
     link: String,
     date: Option<i64>,
-    day: String, // same as date, but YYYY-MM-DD, to be used for partitioning
     black_player_name: String,
     black_player_elo: u32,
     black_player_title: Option<String>,
@@ -26,6 +25,9 @@ pub struct ChessGameEntity {
     timecontrol_duration: Option<u32>,
     timecontrol_increment: Option<u32>,
     termination: u32,
+
+    // partition key should be last field
+    day: String, // same as date, but YYYY-MM-DD, to be used for partitioning
 }
 
 // in hive: cluster by game_id

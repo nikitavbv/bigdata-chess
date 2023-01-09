@@ -15,8 +15,8 @@ use {
     crate::progress::Progress,
 };
 
-const GAMES_PER_FILE: u64 = 80_000;
-const MOVES_PER_FILE: u64 = GAMES_PER_FILE * 25;
+const GAMES_PER_FILE: u64 = 160_000;
+const MOVES_PER_FILE: u64 = GAMES_PER_FILE * 12;
 
 #[allow(dead_code)] // used from other crate
 pub async fn storage_import_step(queue: Arc<Queue>, storage: Arc<Storage>) {
@@ -87,7 +87,9 @@ pub async fn storage_import_step(queue: Arc<Queue>, storage: Arc<Storage>) {
                 let mut output_data = Vec::new();
 
                 {
-                    let mut csv_writer = csv::Writer::from_writer(&mut output_data);
+                    let mut csv_writer = csv::WriterBuilder::new()
+                        .has_headers(false)
+                        .from_writer(&mut output_data);
                     for game_move in &moves {
                         csv_writer.serialize(&game_move).unwrap();
                     }
@@ -106,7 +108,9 @@ pub async fn storage_import_step(queue: Arc<Queue>, storage: Arc<Storage>) {
                 let mut output_data = Vec::new();
 
                 {
-                    let mut csv_writer = csv::Writer::from_writer(&mut output_data);
+                    let mut csv_writer = csv::WriterBuilder::new()
+                        .has_headers(false)
+                        .from_writer(&mut output_data);
                     for comment_eval in &comment_evals {
                         csv_writer.serialize(&comment_eval).unwrap();
                     }
