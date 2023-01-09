@@ -63,6 +63,8 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
 
         let mut message_join_handles = VecDeque::new();
 
+        info!("skipping {} games", games_to_skip);
+
         loop {
             let started_at = Instant::now();
 
@@ -70,6 +72,10 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
             pgn.push_str(&String::from_utf8_lossy(&buf));
 
             let mut found_something = true;
+
+            if games_produced == games_to_skip {
+                info!("skipped {} games", games_to_skip);
+            }
 
             while found_something {
                 if let Some(metadata_end) = pgn.find("\n\n") {
