@@ -1,4 +1,4 @@
-// current performance: 124.79 games/second
+// current performance: 153 games/second
 
 use {
     std::{
@@ -77,6 +77,8 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
 
             if games_produced == games_to_skip {
                 info!("skipped {} games", games_to_skip);
+                progress.reset();
+                time_total = 0;
             }
 
             while found_something {
@@ -117,7 +119,7 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
                             let task_join_handle = tokio::spawn(message_future);
                             message_join_handles.push_back(task_join_handle);
     
-                            while message_join_handles.len() >= 8 {
+                            while message_join_handles.len() >= 16 {
                                 message_join_handles.pop_front().unwrap().await.unwrap();
                             }
     

@@ -34,4 +34,10 @@ impl Progress {
             false
         }
     }
+
+    pub fn reset(&mut self) {
+        self.started_at = Instant::now();
+        self.reported_at = Instant::now();
+        self.total_processed = 0;
+    }
 }
