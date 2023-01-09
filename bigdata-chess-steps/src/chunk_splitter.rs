@@ -101,7 +101,7 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
 
                         games_produced += 1;
 
-                        if games_produced < games_to_skip {
+                        if games_produced > games_to_skip {
                             let io_started_at = Instant::now();
 
                             let queue = queue.clone();
