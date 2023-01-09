@@ -1,3 +1,5 @@
+// current performance: 124.79 games/second
+
 use {
     std::{
         sync::Arc, 
@@ -115,7 +117,7 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
                             let task_join_handle = tokio::spawn(message_future);
                             message_join_handles.push_back(task_join_handle);
     
-                            while message_join_handles.len() >= 4 {
+                            while message_join_handles.len() >= 8 {
                                 message_join_handles.pop_front().unwrap().await.unwrap();
                             }
     
