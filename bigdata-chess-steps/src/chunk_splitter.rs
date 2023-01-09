@@ -31,7 +31,7 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
         .set("bootstrap.servers", queue.kafka_endpoint())
         .set("enable.partition.eof", "false")
         .set("session.timeout.ms", "6000")
-        .set("enable.auto.commit", "true")
+        .set("enable.auto.commit", "false")
         .set("auto.offset.reset", "beginning")
         .create_with_context(StreamingContext)
         .unwrap();

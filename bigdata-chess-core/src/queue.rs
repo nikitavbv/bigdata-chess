@@ -16,6 +16,7 @@ pub const TOPIC_LICHESS_DATA_FILES_SYNCED: &str = "chess-lichess-data-files-sync
 pub const TOPIC_LICHESS_RAW_GAMES: &str = "chess-lichess-raw-games";
 pub const TOPIC_CHESS_GAMES: &str = "chess-games";
 pub const TOPIC_CHESS_GAME_PARSER_ERRORS: &str = "chess-game-parser-errors";
+pub const TOPIC_CHESS_LOGS: &str = "chess-logs";
 
 pub struct Queue {
     kafka_endpoint: String,
@@ -76,6 +77,14 @@ impl Queue {
         self.send_message(
             FutureRecord::to(TOPIC_CHESS_GAME_PARSER_ERRORS)
                 .payload(&error.encode_to_vec())
+                .key(&random_key())
+            ).await;
+    }
+
+    pub async fn send_log_message(&self, message: Vec<u8>) {
+        self.send_message(
+            FutureRecord::to(TOPIC_CHESS_LOGS)
+                .payload(&message)
                 .key(&random_key())
             ).await;
     }

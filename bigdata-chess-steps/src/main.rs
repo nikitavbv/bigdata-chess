@@ -7,7 +7,7 @@ mod utils;
 
 use {
     std::sync::Arc,
-    tracing::info,
+    tracing::{info, error},
     bigdata_chess_core::{
         config::Config,
         storage::Storage,
@@ -20,12 +20,14 @@ use {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    init_logging();
+    init_logging(None);
 
     let config = Config::load();
     let storage = Arc::new(Storage::new(&config.infra().storage()));
 
-    hdfs_import_step(config.steps.hdfs_import(), storage).await;
+    info!("info message");
+    error!("error message");
+    // hdfs_import_step(config.steps.hdfs_import(), storage).await;
 
     Ok(())
 }
