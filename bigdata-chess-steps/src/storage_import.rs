@@ -3,7 +3,7 @@
 use {
     std::{sync::Arc, time::Instant},
     tracing::info,
-    rdkafka::{consumer::{Consumer, CommitMode}, Message},
+    rdkafka::Message,
     prost::Message as ProstMessage,
     rand::{Rng, distributions::Alphanumeric},
     bigdata_chess_core::{
@@ -15,8 +15,8 @@ use {
     crate::progress::Progress,
 };
 
-const GAMES_PER_FILE: u64 = 40_000;
-const MOVES_PER_FILE: u64 = GAMES_PER_FILE * 50;
+const GAMES_PER_FILE: u64 = 80_000;
+const MOVES_PER_FILE: u64 = GAMES_PER_FILE * 25;
 
 #[allow(dead_code)] // used from other crate
 pub async fn storage_import_step(queue: Arc<Queue>, storage: Arc<Storage>) {
