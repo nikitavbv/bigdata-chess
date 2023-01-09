@@ -120,7 +120,7 @@ async fn hdfs_put_bytes(file_id: &str, data: Vec<u8>) {
 async fn hive_load_into_table(file_id: &str, table_name: &str) {
     let mut child = Command::new("hive")
         .arg("-e")
-        .arg(format!("load data inpath '{}' into table {}", file_id, table_name))
+        .arg(format!("load data inpath './{}.csv' into table {}", file_id, table_name))
         .spawn()
         .unwrap();
     let status = child.wait().await.unwrap();
