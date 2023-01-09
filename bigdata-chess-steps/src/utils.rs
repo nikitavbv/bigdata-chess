@@ -27,12 +27,14 @@ pub fn init_logging(queue: Option<Arc<Queue>>) {
 }
 
 struct LogsToKafkaTopicLayer {
+    rt: tokio::runtime::Runtime,
     queue: Option<Arc<Queue>>,
 }
 
 impl LogsToKafkaTopicLayer {
     pub fn new(queue: Option<Arc<Queue>>) -> Self {
         Self {
+            rt: tokio::runtime::Runtime::new().unwrap(),
             queue,
         }
     }
@@ -47,7 +49,7 @@ impl<S> Layer<S> for LogsToKafkaTopicLayer where S: tracing::Subscriber {
 
             if let Some(queue) = self.queue.as_ref() {
                 let queue = queue.clone();
-                tokio::spawn(async move {
+                self.rt.spawn(async move {
                     queue.send_log_message(data.as_bytes().to_vec()).await
                 });
             }
