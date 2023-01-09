@@ -1,4 +1,4 @@
-// current performance: 153 games/second
+// current performance: 267 games/second
 
 use {
     std::{

@@ -96,7 +96,7 @@ pub async fn game_parser_step(config: &GameParserStepConfig, queue: Arc<Queue>) 
         let task_future = tokio::spawn(message_future);
         message_join_handles.push_back(task_future);
 
-        while message_join_handles.len() >= 4 {
+        while message_join_handles.len() >= 8 {
             message_join_handles.pop_front().unwrap().await.unwrap();
         }
 
