@@ -17,7 +17,9 @@ hive workers: 2 -> 4 -> 8 -> 16
 
 ## infrastructure notes
 
-- it seems that redpanda requires >4GB of ram. It hanged when running on 4GB instance.
+- it seems that redpanda requires >8GB of ram. It hanged when running on 8GB instance.
+
+- run this command to find out if bottleneck is in disk io: `iostat -d -x 1`, if you see util `100%`, then it means that bottleneck is probably io.
 
 ### kafka topics
 

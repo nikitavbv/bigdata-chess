@@ -1,4 +1,4 @@
-// current performance: 267 games/second
+// current performance: 1230 games/second
 
 use {
     std::{
@@ -6,16 +6,17 @@ use {
         io::Read, 
         collections::{hash_map::DefaultHasher, VecDeque},
         hash::Hasher,
-        time::Instant,
+        time::{Instant, Duration},
     },
     tracing::info,
     prost::Message,
     rdkafka::{
         Message as KafkaMessage,
         config::ClientConfig,
-        producer::FutureRecord,
+        producer::{FutureRecord, Producer},
         consumer::{StreamConsumer, CommitMode, Consumer},
     },
+    rand::{Rng, distributions::Alphanumeric},
     bigdata_chess_core::{
         storage::Storage,
         queue::{Queue, StreamingContext, TOPIC_LICHESS_DATA_FILES_SYNCED, SyncedFileMessage, TOPIC_LICHESS_RAW_GAMES},
@@ -39,9 +40,13 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
         .unwrap();
     consumer.subscribe(&vec![TOPIC_LICHESS_DATA_FILES_SYNCED]).unwrap();
 
+    let producer = queue.transactional_producer(&format!("chunk-splitter-{}", random_transactional_id()));
+
     let to_topic = config.to_topic().clone();
 
     let mut progress = Progress::new("processing games".to_owned());
+
+    let mut output_batch = Vec::new();
 
     loop {
         let msg = consumer.recv().await.unwrap();
@@ -63,7 +68,7 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
         let games_to_skip = storage.get_lichess_data_file_chunk_splitting_state(payload.path().to_owned()).await;
         let mut state_sync_time = Instant::now();
 
-        let mut message_join_handles = VecDeque::new();
+        // let mut message_join_handles = VecDeque::new();
 
         info!("skipping {} games", games_to_skip);
 
@@ -106,7 +111,24 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
                         games_produced += 1;
 
                         if games_produced > games_to_skip {
-                            let io_started_at = Instant::now();
+                            output_batch.push((hasher.finish().encode_to_vec(), encoded_game));
+
+                            if output_batch.len() >= 16 {
+                                let io_started_at = Instant::now();
+                                producer.begin_transaction().unwrap();
+                                for (key, value) in &output_batch {
+                                    producer.send(FutureRecord::to(&to_topic)
+                                        .payload(&value)
+                                        .key(&key), Duration::from_secs(10))
+                                        .await
+                                        .unwrap();
+                                }
+                                producer.commit_transaction(Duration::from_secs(10)).unwrap();
+                                output_batch.clear();
+                                time_io += (Instant::now() - io_started_at).as_secs_f64();
+                            }
+
+                            /*let io_started_at = Instant::now();
 
                             let queue = queue.clone();
                             let to_topic = to_topic.clone();
@@ -123,7 +145,7 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
                                 message_join_handles.pop_front().unwrap().await.unwrap();
                             }
     
-                            time_io += (Instant::now() - io_started_at).as_secs_f64();
+                            time_io += (Instant::now() - io_started_at).as_secs_f64();*/
 
                             let now = Instant::now();
                             if (now - state_sync_time).as_secs_f32() > 60.0 {
@@ -194,4 +216,12 @@ impl Read for LichessDataFileChunkReader {
 
         Ok(bytes_to_return)
     }
+}
+
+fn random_transactional_id() -> String {
+    rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(16)
+        .map(char::from)
+        .collect()
 }

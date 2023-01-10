@@ -1,3 +1,5 @@
+use rdkafka::producer::Producer;
+
 use {
     std::time::Duration,
     serde::{Serialize, Deserialize},
@@ -63,6 +65,10 @@ impl Queue {
             .unwrap()
     }
 
+    pub fn transactional_producer(&self, transactional_id: &str) -> FutureProducer {
+        transactional_producer(&self.kafka_endpoint, transactional_id)
+    }
+
     pub fn consumer_for_topic(&self, group_id: &str, topic: &str) -> StreamConsumer<StreamingContext> {
         let consumer = self.consumer(group_id);
         consumer.subscribe(&vec![topic]).unwrap();
@@ -113,6 +119,19 @@ fn producer(endpoint: &str) -> FutureProducer {
         .set("message.timeout.ms", "5000")
         .create()
         .unwrap()
+}
+
+fn transactional_producer(endpoint: &str, transactional_id: &str) -> FutureProducer {
+    let producer: FutureProducer = ClientConfig::new()
+        .set("bootstrap.servers", endpoint)
+        .set("message.timeout.ms", "5000")
+        .set("transactional.id", transactional_id)
+        .create()
+        .unwrap();
+
+    producer.init_transactions(Duration::from_secs(10));
+
+    producer
 }
 
 fn random_key() -> Vec<u8> {
