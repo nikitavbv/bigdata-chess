@@ -1,7 +1,5 @@
 // current performance: 1230 games/second
 
-use futures::Future;
-
 use {
     std::{
         sync::Arc, 
@@ -19,9 +17,6 @@ use {
         consumer::{StreamConsumer, CommitMode, Consumer},
     },
     rand::{Rng, distributions::Alphanumeric},
-    async_compression::futures::bufread::ZstdDecoder,
-    futures::io::BufReader,
-    futures_util::AsyncReadExt,
     bigdata_chess_core::{
         storage::Storage,
         queue::{Queue, StreamingContext, TOPIC_LICHESS_DATA_FILES_SYNCED, SyncedFileMessage, TOPIC_LICHESS_RAW_GAMES},
@@ -61,8 +56,9 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
 
         info!("processing file {}", payload.path());
         let reader = LichessDataFileChunkReader::new(storage.clone(), payload.path().to_owned(), payload.total_chunks());
+        let data = reader.read().await;
 
-        let mut decoder = ZstdDecoder::new(BufReader::new(reader));
+        let mut decoder = zstd::Decoder::new(data).unwrap();
         
         let mut pgn = String::new();
         let mut buf = vec![0; 1024];
@@ -83,7 +79,7 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
             let started_at = Instant::now();
 
             let uncompress_started_at = Instant::now();
-            let res = decoder.read(&mut buf).await.unwrap();
+            let res = decoder.read(&mut buf).unwrap();
             time_decompress += (Instant::now() - uncompress_started_at).as_secs_f64();
             pgn.push_str(&String::from_utf8_lossy(&buf));
 
@@ -212,45 +208,17 @@ impl LichessDataFileChunkReader {
             current_chunk: None,
         }
     }
-}
 
-impl futures::AsyncRead for LichessDataFileChunkReader {
-    fn poll_read(
-            self: std::pin::Pin<&mut Self>,
-            cx: &mut std::task::Context<'_>,
-            buf: &mut [u8],
-        ) -> std::task::Poll<std::io::Result<usize>> {
-        let read_future = async move {
-            let s = self.get_mut();
+    pub async fn read(self) -> VecDeque<u8> {
+        let mut res = VecDeque::new();
 
-            while buf.len() > s.chunk_buffer.len() && s.current_chunk.unwrap_or(0) < s.total_chunks {
-                let chunk_to_fetch = s.current_chunk.unwrap_or(0);
+        for chunk in 0..self.total_chunks {
+            info!("fetching chunk {}/{}", chunk, self.total_chunks);
+            let mut chunk = self.storage.get_lichess_data_file_chunk(&self.path, chunk).await.unwrap();
+            res.append(&mut chunk.into());
+        }
 
-                info!("reading next chunk: {}", chunk_to_fetch);
-
-                let mut res = match s.storage.get_lichess_data_file_chunk(&s.path, chunk_to_fetch).await {
-                    Ok(v) => {
-                        info!("done reading next chunk");
-                        v
-                    },
-                    Err(err) => {
-                        error!("failed to read next chunk: {:?}", err);
-                        panic!("failed to read next chunk");
-                    }
-                };
-
-                s.chunk_buffer.append(&mut res);
-                s.current_chunk = Some(chunk_to_fetch + 1);
-            }
-
-            let bytes_to_return = buf.len().min(s.chunk_buffer.len());
-            buf.clone_from_slice(&s.chunk_buffer.drain(0..bytes_to_return).collect::<Vec<u8>>());
-    
-            Ok(bytes_to_return)
-        };
-        futures::pin_mut!(read_future);
-        let read_future_pin: std::pin::Pin<_> = read_future;
-        read_future_pin.poll(cx)
+        res
     }
 }
 
