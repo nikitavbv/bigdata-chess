@@ -8,7 +8,7 @@ use {
         hash::Hasher,
         time::{Instant, Duration},
     },
-    tracing::info,
+    tracing::{info, error},
     prost::Message,
     rdkafka::{
         Message as KafkaMessage,
@@ -215,8 +215,18 @@ impl Read for LichessDataFileChunkReader {
             let chunk_to_fetch = self.current_chunk.unwrap_or(0);
             let mut chunk_data = futures::executor::block_on(async {
                 info!("reading next chunk: {}", chunk_to_fetch);
-                let res = self.storage.get_lichess_data_file_chunk(&self.path, chunk_to_fetch).await;
-                info!("done reading next chunk");
+
+                let res = match self.storage.get_lichess_data_file_chunk(&self.path, chunk_to_fetch).await {
+                    Ok(v) => {
+                        info!("done reading next chunk");
+                        v
+                    },
+                    Err(err) => {
+                        error!("failed to read next chunk: {:?}", err);
+                        panic!("failed to read next chunk");
+                    }
+                };
+
                 res
             });
             self.chunk_buffer.append(&mut chunk_data);

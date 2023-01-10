@@ -64,8 +64,10 @@ impl Storage {
         self.bucket.get_object_range(format!("{}/{}", path, chunk_index), 0, Some(8)).await.is_ok()
     }
 
-    pub async fn get_lichess_data_file_chunk(&self, path: &str, chunk_index: u64) -> Vec<u8> {
-        self.bucket.get_object(format!("{}/{}", path, chunk_index)).await.unwrap().to_vec()
+    pub async fn get_lichess_data_file_chunk(&self, path: &str, chunk_index: u64) -> Result<Vec<u8>> {
+        self.bucket.get_object(format!("{}/{}", path, chunk_index)).await
+            .map(|v| v.to_vec())
+            .map_err(|err| anyhow!("failed to get lichess data file chunk: {:?}", err))
     }
 
     pub async fn put_game_data_file(&self, key: &str, data: Vec<u8>) {
