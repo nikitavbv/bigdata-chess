@@ -44,7 +44,7 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
 
     let to_topic = config.to_topic().clone();
 
-    let mut progress = Progress::new("processing games".to_owned());
+    let mut progress = Progress::new("skipping".to_owned());
 
     let mut output_batch = Vec::new();
 
@@ -82,7 +82,7 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
 
             if games_produced == games_to_skip {
                 info!("skipped {} games", games_to_skip);
-                progress.reset();
+                progress = Progress::new("processing games".to_owned());
                 time_total = 0.0;
             }
 
@@ -157,6 +157,8 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
                                 info!("time_total: {}", time_total.round());
                                 info!("time_io: {}", time_io.round());
                             }
+                        } else {
+                            progress.update();
                         }
                     } else {
                         found_something = false;
