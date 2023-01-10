@@ -36,6 +36,7 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
         .set("session.timeout.ms", "6000")
         .set("enable.auto.commit", "false")
         .set("auto.offset.reset", "beginning")
+        .set("max.poll.interval.ms", "3000000")
         .create_with_context(StreamingContext)
         .unwrap();
     consumer.subscribe(&vec![TOPIC_LICHESS_DATA_FILES_SYNCED]).unwrap();
