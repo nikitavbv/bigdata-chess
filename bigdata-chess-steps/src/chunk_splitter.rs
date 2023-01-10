@@ -214,7 +214,7 @@ impl Read for LichessDataFileChunkReader {
         while buf.len() > self.chunk_buffer.len() && self.current_chunk.unwrap_or(0) < self.total_chunks {
             let chunk_to_fetch = self.current_chunk.unwrap_or(0);
             let mut chunk_data = futures::executor::block_on(async {
-                info!("reading next chunk");
+                info!("reading next chunk: {}", chunk_to_fetch);
                 let res = self.storage.get_lichess_data_file_chunk(&self.path, chunk_to_fetch).await;
                 info!("done reading next chunk");
                 res
