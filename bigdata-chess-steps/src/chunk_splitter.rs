@@ -64,6 +64,7 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
 
         let mut time_total: f64 = 0.0;
         let mut time_io: f64 = 0.0;
+        let mut time_decompress: f64 = 0.0;
 
         let mut games_produced = 0;
         let games_to_skip = storage.get_lichess_data_file_chunk_splitting_state(payload.path().to_owned()).await;
@@ -76,7 +77,9 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
         loop {
             let started_at = Instant::now();
 
+            let uncompress_started_at = Instant::now();
             let res = decoder.read(&mut buf).unwrap();
+            time_decompress += (Instant::now() - uncompress_started_at).as_secs_f64();
             pgn.push_str(&String::from_utf8_lossy(&buf));
 
             let mut found_something = true;
@@ -159,7 +162,10 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
                                 info!("time_io: {}", time_io.round());
                             }
                         } else {
-                            progress.update();
+                            if progress.update() {
+                                info!("time_total: {}", time_total.round());
+                                info!("time_decompress: {}", time_decompress.round());
+                            }
                         }
                     } else {
                         found_something = false;
