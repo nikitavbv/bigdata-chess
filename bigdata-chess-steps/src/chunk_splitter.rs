@@ -214,26 +214,28 @@ impl LichessDataFileChunkReader {
 
 impl Read for LichessDataFileChunkReader {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        while buf.len() > self.chunk_buffer.len() && self.current_chunk.unwrap_or(0) < self.total_chunks {
-            let chunk_to_fetch = self.current_chunk.unwrap_or(0);
-            let mut chunk_data = self.handle.block_on(async {
-                info!("reading next chunk: {}", chunk_to_fetch);
+        if buf.len() > self.chunk_buffer.len() && self.current_chunk.unwrap_or(0) < self.total_chunks {
+            futures::executor::block_on(async {
+                while buf.len() > self.chunk_buffer.len() && self.current_chunk.unwrap_or(0) < self.total_chunks {
+                    let chunk_to_fetch = self.current_chunk.unwrap_or(0);
 
-                let res = match self.storage.get_lichess_data_file_chunk(&self.path, chunk_to_fetch).await {
-                    Ok(v) => {
-                        info!("done reading next chunk");
-                        v
-                    },
-                    Err(err) => {
-                        error!("failed to read next chunk: {:?}", err);
-                        panic!("failed to read next chunk");
-                    }
-                };
+                    info!("reading next chunk: {}", chunk_to_fetch);
 
-                res
+                    let mut res = match self.storage.get_lichess_data_file_chunk(&self.path, chunk_to_fetch).await {
+                        Ok(v) => {
+                            info!("done reading next chunk");
+                            v
+                        },
+                        Err(err) => {
+                            error!("failed to read next chunk: {:?}", err);
+                            panic!("failed to read next chunk");
+                        }
+                    };
+
+                    self.chunk_buffer.append(&mut res);
+                    self.current_chunk = Some(chunk_to_fetch + 1);
+                }
             });
-            self.chunk_buffer.append(&mut chunk_data);
-            self.current_chunk = Some(chunk_to_fetch + 1);
         }
 
         let bytes_to_return = buf.len().min(self.chunk_buffer.len());
