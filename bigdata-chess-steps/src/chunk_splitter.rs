@@ -216,8 +216,7 @@ impl Read for LichessDataFileChunkReader {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         while buf.len() > self.chunk_buffer.len() && self.current_chunk.unwrap_or(0) < self.total_chunks {
             let chunk_to_fetch = self.current_chunk.unwrap_or(0);
-            let _ = self.handle.enter();
-            let mut chunk_data = futures::executor::block_on(async {
+            let mut chunk_data = self.handle.block_on(async {
                 info!("reading next chunk: {}", chunk_to_fetch);
 
                 let res = match self.storage.get_lichess_data_file_chunk(&self.path, chunk_to_fetch).await {
