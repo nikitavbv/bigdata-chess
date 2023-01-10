@@ -1,5 +1,7 @@
 // current performance: 1230 games/second
 
+use futures::Future;
+
 use {
     std::{
         sync::Arc, 
@@ -17,6 +19,9 @@ use {
         consumer::{StreamConsumer, CommitMode, Consumer},
     },
     rand::{Rng, distributions::Alphanumeric},
+    async_compression::futures::bufread::ZstdDecoder,
+    futures::io::BufReader,
+    futures_util::AsyncReadExt,
     bigdata_chess_core::{
         storage::Storage,
         queue::{Queue, StreamingContext, TOPIC_LICHESS_DATA_FILES_SYNCED, SyncedFileMessage, TOPIC_LICHESS_RAW_GAMES},
@@ -57,7 +62,7 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
         info!("processing file {}", payload.path());
         let reader = LichessDataFileChunkReader::new(storage.clone(), payload.path().to_owned(), payload.total_chunks());
 
-        let mut decoder = zstd::Decoder::new(reader).unwrap();
+        let mut decoder = ZstdDecoder::new(BufReader::new(reader));
         
         let mut pgn = String::new();
         let mut buf = vec![0; 1024];
@@ -78,7 +83,7 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
             let started_at = Instant::now();
 
             let uncompress_started_at = Instant::now();
-            let res = decoder.read(&mut buf).unwrap();
+            let res = decoder.read(&mut buf).await.unwrap();
             time_decompress += (Instant::now() - uncompress_started_at).as_secs_f64();
             pgn.push_str(&String::from_utf8_lossy(&buf));
 
@@ -189,8 +194,6 @@ pub async fn chunk_splitter_step(config: &ChunkSplitterStepConfig, storage: Arc<
 }
 
 pub struct LichessDataFileChunkReader {
-    handle: tokio::runtime::Handle,
-
     storage: Arc<Storage>,
     path: String,
     total_chunks: u64,
@@ -202,7 +205,6 @@ pub struct LichessDataFileChunkReader {
 impl LichessDataFileChunkReader {
     pub fn new(storage: Arc<Storage>, path: String, total_chunks: u64) -> Self {
         Self {
-            handle: tokio::runtime::Handle::current(),
             storage,
             path,
             total_chunks,
@@ -212,36 +214,43 @@ impl LichessDataFileChunkReader {
     }
 }
 
-impl Read for LichessDataFileChunkReader {
-    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        if buf.len() > self.chunk_buffer.len() && self.current_chunk.unwrap_or(0) < self.total_chunks {
-            futures::executor::block_on(async {
-                while buf.len() > self.chunk_buffer.len() && self.current_chunk.unwrap_or(0) < self.total_chunks {
-                    let chunk_to_fetch = self.current_chunk.unwrap_or(0);
+impl futures::AsyncRead for LichessDataFileChunkReader {
+    fn poll_read(
+            self: std::pin::Pin<&mut Self>,
+            cx: &mut std::task::Context<'_>,
+            buf: &mut [u8],
+        ) -> std::task::Poll<std::io::Result<usize>> {
+        let read_future = async move {
+            let s = self.get_mut();
 
-                    info!("reading next chunk: {}", chunk_to_fetch);
+            while buf.len() > s.chunk_buffer.len() && s.current_chunk.unwrap_or(0) < s.total_chunks {
+                let chunk_to_fetch = s.current_chunk.unwrap_or(0);
 
-                    let mut res = match self.storage.get_lichess_data_file_chunk(&self.path, chunk_to_fetch).await {
-                        Ok(v) => {
-                            info!("done reading next chunk");
-                            v
-                        },
-                        Err(err) => {
-                            error!("failed to read next chunk: {:?}", err);
-                            panic!("failed to read next chunk");
-                        }
-                    };
+                info!("reading next chunk: {}", chunk_to_fetch);
 
-                    self.chunk_buffer.append(&mut res);
-                    self.current_chunk = Some(chunk_to_fetch + 1);
-                }
-            });
-        }
+                let mut res = match s.storage.get_lichess_data_file_chunk(&s.path, chunk_to_fetch).await {
+                    Ok(v) => {
+                        info!("done reading next chunk");
+                        v
+                    },
+                    Err(err) => {
+                        error!("failed to read next chunk: {:?}", err);
+                        panic!("failed to read next chunk");
+                    }
+                };
 
-        let bytes_to_return = buf.len().min(self.chunk_buffer.len());
-        buf.clone_from_slice(&self.chunk_buffer.drain(0..bytes_to_return).collect::<Vec<u8>>());
+                s.chunk_buffer.append(&mut res);
+                s.current_chunk = Some(chunk_to_fetch + 1);
+            }
 
-        Ok(bytes_to_return)
+            let bytes_to_return = buf.len().min(s.chunk_buffer.len());
+            buf.clone_from_slice(&s.chunk_buffer.drain(0..bytes_to_return).collect::<Vec<u8>>());
+    
+            Ok(bytes_to_return)
+        };
+        futures::pin_mut!(read_future);
+        let read_future_pin: std::pin::Pin<_> = read_future;
+        read_future_pin.poll(cx)
     }
 }
 
