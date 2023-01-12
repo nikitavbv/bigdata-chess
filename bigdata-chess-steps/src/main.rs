@@ -3,6 +3,7 @@ mod hdfs_import;
 mod postgres_import;
 mod progress;
 mod storage_import;
+mod update_checker;
 mod utils;
 
 use {
