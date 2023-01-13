@@ -129,7 +129,7 @@ fn transactional_producer(endpoint: &str, transactional_id: &str) -> FutureProdu
         .create()
         .unwrap();
 
-    producer.init_transactions(Duration::from_secs(10));
+    producer.init_transactions(Duration::from_secs(10)).unwrap();
 
     producer
 }
