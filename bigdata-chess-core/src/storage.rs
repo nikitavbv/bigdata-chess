@@ -103,11 +103,13 @@ impl Storage {
     }
 
     async fn remote_api_request(&self, url: &str) -> Result<reqwest::Response> {
-        let res = self.client.get(url)
+        let res = match self.client.get(url)
             .header("Authorization", self.authorization_header_value_for_remote_api())
             .send()
-            .await
-            .unwrap();
+            .await {
+                Ok(v) => v,
+                Err(err) => return Err(anyhow!("request to remote storage api failed: {:?}", err)),
+            };
 
         if res.status() != StatusCode::OK {
             return Err(anyhow!("remote storage api returned status: {}", res.status().as_u16()));
