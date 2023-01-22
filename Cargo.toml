@@ -3,4 +3,5 @@
 members = [
     "bigdata-chess-core",
     "bigdata-chess-steps",
+    "bigdata-hn",
 ]
