@@ -44,6 +44,13 @@ pub struct CommentSentiment {
     pub sentiment: Sentiment,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CommentEmbeddings {
+    pub id: String,
+    pub text: String,
+    pub embeddings: Vec<f32>,
+}
+
 impl Comment {
     pub fn tokenized(self, tokens: Vec<String>) -> CommentTokenized {
         CommentTokenized {
@@ -58,6 +65,14 @@ impl Comment {
             id: self.id,
             text: self.text,
             sentiment,
+        }
+    }
+
+    pub fn embeddings(self, embeddings: Vec<f32>) -> CommentEmbeddings {
+        CommentEmbeddings {
+            id: self.id,
+            text: self.text,
+            embeddings,
         }
     }
 }

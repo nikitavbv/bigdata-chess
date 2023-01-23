@@ -8,8 +8,10 @@
   - read from `hn-comments`
   - write to `hn-comments-sentiment`
 - categories: cluster rust-bert sentence embeddings using kmeans
-  - read from `hn-comments`
-  - write comments and embeddings to json file.
+  - [done] write embeddings
+    - read from `hn-comments`
+    - write comments to `hn-comments-embeddings`.
+  - save from `hn-comments-embeddings` to csv file.
   - read json file and cluster using https://docs.rs/linfa-clustering/latest/linfa_clustering/struct.KMeans.html
 - [done] hashing (for tfidf): https://docs.rs/murmur3/latest/murmur3/fn.murmur3_32.html
   - read from `hn-comments-tokenized`
