@@ -14,7 +14,7 @@ use {
 pub async fn run_sentiment_step(queue: Arc<Queue>) {
     info!("this works?");
 
-    let sentiment_model = SentimentModel::new(Default::default()).unwrap();
+    let sentiment_model = tokio::task::spawn_blocking(|| SentimentModel::new(Default::default()).unwrap()).await.unwrap();
     let output = sentiment_model.predict(&["I love cookies so much!"]);
 
     info!("output: {:?}", output);
