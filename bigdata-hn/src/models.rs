@@ -51,6 +51,15 @@ pub struct CommentEmbeddings {
     pub embeddings: Vec<f32>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CommentTfIdf {
+    pub id: String,
+    pub text: String,
+    pub tokens: Vec<String>,
+    pub hashes: Vec<u32>,
+    pub tfidf: Vec<f32>,
+}
+
 impl Comment {
     pub fn tokenized(self, tokens: Vec<String>) -> CommentTokenized {
         CommentTokenized {
@@ -93,6 +102,18 @@ impl CommentTokenized {
             text: self.text,
             tokens: self.tokens,
             hashes,
+        }
+    }
+}
+
+impl CommentHashed {
+    pub fn tfidf(self, tfidf: Vec<f32>) -> CommentTfIdf {
+        CommentTfIdf {
+            id: self.id,
+            text: self.text,
+            tokens: self.tokens,
+            hashes: self.hashes,
+            tfidf,
         }
     }
 }

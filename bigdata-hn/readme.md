@@ -16,11 +16,11 @@
 - [done] hashing (for tfidf): https://docs.rs/murmur3/latest/murmur3/fn.murmur3_32.html
   - read from `hn-comments-tokenized`
   - write to `hn-comments-hashed`
-- tfidf: count number of documents with term in them (i.e. term is counted once per document)
+- [done] tfidf: count number of documents with term in them (i.e. term is counted once per document)
   - [done] stats collector:
     - read from `hn-comments-hashed`
     - write stats to leveldb
-  - metric calculator:
+  - [done] metric calculator:
     - read from `hn-comments-hashed`
     - write metric to `hn-comments-tfidf`
 - bag of words write words to csv and analyze using spark

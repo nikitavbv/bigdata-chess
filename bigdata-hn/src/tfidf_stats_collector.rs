@@ -1,5 +1,3 @@
-use byteorder::ByteOrder;
-
 use {
     std::{sync::Arc, collections::HashSet, path::Path},
     rdkafka::{consumer::Consumer, Message},
@@ -9,6 +7,7 @@ use {
         kv::KV,
         options::{WriteOptions, ReadOptions, Options},
     },
+    byteorder::ByteOrder,
     bigdata_chess_core::queue::Queue,
     crate::{
         models::CommentHashed,
