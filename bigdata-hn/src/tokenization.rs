@@ -34,7 +34,7 @@ pub async fn run_tokenization_step(queue: Arc<Queue>) {
 
         let queue = queue.clone();
         let message_future = async move {
-            queue.send_message(FutureRecord::to("hn-comments").payload(&payload).key(&id)).await;
+            queue.send_message(FutureRecord::to("hn-comments-tokenized").payload(&payload).key(&id)).await;
         };
 
         let task_future = tokio::spawn(message_future);

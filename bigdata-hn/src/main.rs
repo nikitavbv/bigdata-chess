@@ -7,10 +7,12 @@ use {
     tracing::info,
     crate::{
         tokenization::run_tokenization_step,
+        lemmatization::run_lemmatization_step,
     }
 };
 
 mod data_loading;
+mod lemmatization;
 mod models;
 mod progress;
 mod tokenization;
@@ -27,6 +29,7 @@ async fn main() -> std::io::Result<()> {
 
     // load_data_files(queue);
     run_tokenization_step(queue).await;
+    // run_lemmatization_step(queue).await;
 
     Ok(())
 }
