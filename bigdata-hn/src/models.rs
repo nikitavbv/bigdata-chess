@@ -31,12 +31,33 @@ pub struct CommentHashed {
     pub hashes: Vec<u32>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Sentiment {
+    pub polarity: String,
+    pub score: f64,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CommentSentiment {
+    pub id: String,
+    pub text: String,
+    pub sentiment: Sentiment,
+}
+
 impl Comment {
     pub fn tokenized(self, tokens: Vec<String>) -> CommentTokenized {
         CommentTokenized {
             id: self.id,
             text: self.text,
             tokens,
+        }
+    }
+
+    pub fn sentiment(self, sentiment: Sentiment) -> CommentSentiment {
+        CommentSentiment {
+            id: self.id,
+            text: self.text,
+            sentiment,
         }
     }
 }

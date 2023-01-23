@@ -4,7 +4,7 @@
 - [done] lemmatization: using python nltk
   - read from `hn-comments-tokenized`
   - write to `hn-comments-lemmatized`
-- sentiment: https://docs.rs/rust-bert/latest/rust_bert/
+- [done] sentiment: https://docs.rs/rust-bert/latest/rust_bert/
   - read from `hn-comments`
   - write to `hn-comments-sentiment`
 - categories: cluster rust-bert sentence embeddings using kmeans
