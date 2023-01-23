@@ -1,7 +1,7 @@
 - [done] tokenization: https://docs.rs/tokenizers/latest/tokenizers/
   - read from `hn-comments`
   - write to `hn-comments-tokenized`
-- lemmatization: https://docs.rs/nlprule/latest/nlprule/tokenizer/tag/struct.Tagger.html
+- [done] lemmatization: using python nltk
   - read from `hn-comments-tokenized`
   - write to `hn-comments-lemmatized`
 - sentiment: https://docs.rs/rust-bert/latest/rust_bert/

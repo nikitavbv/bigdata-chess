@@ -6,6 +6,7 @@ use {
     },
     tracing::info,
     crate::{
+        data_loading::load_data_files,
         tokenization::run_tokenization_step,
         lemmatization::run_lemmatization_step,
     }
@@ -27,9 +28,9 @@ async fn main() -> std::io::Result<()> {
     let config = Config::load();
     let queue = Arc::new(Queue::new(&config.infra().queue())); 
 
-    // load_data_files(queue);
-    run_tokenization_step(queue).await;
-    // run_lemmatization_step(queue).await;
+    // load_data_files(queue).await;
+    // run_tokenization_step(queue).await;
+    run_lemmatization_step(queue).await;
 
     Ok(())
 }

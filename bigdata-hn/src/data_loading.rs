@@ -13,7 +13,7 @@ pub struct RawDataEntry {
     text: String,
 }
 
-async fn load_data_files(queue: Arc<Queue>) {
+pub async fn load_data_files(queue: Arc<Queue>) {
     for path in read_dir("./data").unwrap() {
         load_data_file(queue.clone(), &path.unwrap().file_name().to_str().unwrap().to_string()).await;
     }
