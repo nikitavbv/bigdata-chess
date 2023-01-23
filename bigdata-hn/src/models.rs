@@ -1,5 +1,7 @@
 use serde::{Serialize, Deserialize};
 
+pub const HASHING_BUCKETS: u32 = 262144; // similar to Spark HashingTF
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Comment {
     pub id: String,
@@ -21,12 +23,20 @@ pub struct CommentLemmatized {
     pub lemmas: Vec<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CommentHashed {
+    pub id: String,
+    pub text: String,
+    pub tokens: Vec<String>,
+    pub hashes: Vec<u32>,
+}
+
 impl Comment {
     pub fn tokenized(self, tokens: Vec<String>) -> CommentTokenized {
         CommentTokenized {
             id: self.id,
             text: self.text,
-            tokens: tokens,
+            tokens,
         }
     }
 }
@@ -37,7 +47,16 @@ impl CommentTokenized {
             id: self.id,
             text: self.text, 
             tokens: self.tokens, 
-            lemmas: lemmas,
+            lemmas,
+        }
+    }
+
+    pub fn hashed(self, hashes: Vec<u32>) -> CommentHashed {
+        CommentHashed {
+            id: self.id,
+            text: self.text,
+            tokens: self.tokens,
+            hashes,
         }
     }
 }

@@ -11,7 +11,7 @@
   - read from `hn-comments`
   - write comments and embeddings to json file.
   - read json file and cluster using https://docs.rs/linfa-clustering/latest/linfa_clustering/struct.KMeans.html
-- hashing (for tfidf): https://docs.rs/murmur3/latest/murmur3/fn.murmur3_32.html
+- [done] hashing (for tfidf): https://docs.rs/murmur3/latest/murmur3/fn.murmur3_32.html
   - read from `hn-comments-tokenized`
   - write to `hn-comments-hashed`
 - tfidf: count number of documents with term in them (i.e. term is counted once per document)

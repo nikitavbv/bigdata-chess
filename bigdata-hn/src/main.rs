@@ -9,10 +9,12 @@ use {
         data_loading::load_data_files,
         tokenization::run_tokenization_step,
         lemmatization::run_lemmatization_step,
+        hasher::run_hashing_step,
     }
 };
 
 mod data_loading;
+mod hasher;
 mod lemmatization;
 mod models;
 mod progress;
@@ -30,7 +32,8 @@ async fn main() -> std::io::Result<()> {
 
     // load_data_files(queue).await;
     // run_tokenization_step(queue).await;
-    run_lemmatization_step(queue).await;
+    // run_lemmatization_step(queue).await;
+    run_hashing_step(queue).await;
 
     Ok(())
 }
