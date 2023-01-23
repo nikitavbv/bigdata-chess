@@ -15,9 +15,11 @@ use {
         sentiment::run_sentiment_step,
         categories::run_categories_step,
         embeddings_saver::run_embeddings_saver_step,
+        bag_of_words::run_bag_of_words_step,
     }
 };
 
+mod bag_of_words;
 mod categories;
 mod data_loading;
 mod embeddings_saver;
@@ -48,7 +50,8 @@ async fn main() -> std::io::Result<()> {
     // run_categories_step(queue).await;
     // run_stats_collector_step(queue).await;
     // run_metric_calculator_step(queue).await;
-    run_embeddings_saver_step(queue).await;
-    
+    // run_embeddings_saver_step(queue).await;
+    run_bag_of_words_step(queue).await;
+
     Ok(())
 }

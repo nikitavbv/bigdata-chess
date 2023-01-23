@@ -23,7 +23,6 @@
   - [done] metric calculator:
     - read from `hn-comments-hashed`
     - write metric to `hn-comments-tfidf`
-- bag of words write words to csv and analyze using spark
+- [done] bag of words write words to csv and analyze using spark
   - read from `hn-comments-hashed`
   - write stats to json
-  - implement reading resulting file
