@@ -13,7 +13,7 @@ use {
 
 pub async fn run_sentiment_step(queue: Arc<Queue>) {
     let consumer = queue.consumer("bigdata-hn-sentiment");
-    consumer.subscribe(&["hm-comments"]).unwrap();
+    consumer.subscribe(&["hn-comments"]).unwrap();
 
     let sentiment_model = tokio::task::spawn_blocking(|| SentimentModel::new(Default::default()).unwrap()).await.unwrap();
     
