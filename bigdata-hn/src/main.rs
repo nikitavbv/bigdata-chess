@@ -12,9 +12,11 @@ use {
         hasher::run_hashing_step,
         tfidf_stats_collector::run_stats_collector_step,
         sentiment::run_sentiment_step,
+        categories::run_categories_step,
     }
 };
 
+mod categories;
 mod data_loading;
 mod hasher;
 mod lemmatization;
@@ -39,7 +41,8 @@ async fn main() -> std::io::Result<()> {
     // run_lemmatization_step(queue).await;
     // run_hashing_step(queue).await;
     // run_sentiment_step(queue).await;
-    run_stats_collector_step(queue).await;
+    run_categories_step(queue).await;
+    // run_stats_collector_step(queue).await;
 
     Ok(())
 }
