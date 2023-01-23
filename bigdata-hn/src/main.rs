@@ -10,6 +10,7 @@ use {
         tokenization::run_tokenization_step,
         lemmatization::run_lemmatization_step,
         hasher::run_hashing_step,
+        tfidf_stats_collector::run_stats_collector_step,
         sentiment::run_sentiment_step,
     }
 };
@@ -20,6 +21,7 @@ mod lemmatization;
 mod models;
 mod progress;
 mod sentiment;
+mod tfidf_stats_collector;
 mod tokenization;
 mod utils;
 
@@ -36,7 +38,8 @@ async fn main() -> std::io::Result<()> {
     // run_tokenization_step(queue).await;
     // run_lemmatization_step(queue).await;
     // run_hashing_step(queue).await;
-    run_sentiment_step(queue).await;
+    // run_sentiment_step(queue).await;
+    run_stats_collector_step(queue).await;
 
     Ok(())
 }

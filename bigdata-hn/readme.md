@@ -15,7 +15,7 @@
   - read from `hn-comments-tokenized`
   - write to `hn-comments-hashed`
 - tfidf: count number of documents with term in them (i.e. term is counted once per document)
-  - stats collector:
+  - [done] stats collector:
     - read from `hn-comments-hashed`
     - write stats to leveldb
   - metric calculator:

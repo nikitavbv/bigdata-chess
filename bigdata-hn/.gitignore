@@ -1,3 +1,4 @@
 data
 config.toml
 libtorch
+tfidf_stats
