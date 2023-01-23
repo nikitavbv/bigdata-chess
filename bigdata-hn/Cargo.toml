@@ -17,4 +17,5 @@ tracing = "0.1.37"
 tracing-subscriber = "0.3.16"
 pyo3 = { version = "0.18.0", features = ["auto-initialize"] }
 murmur3 = "0.5.2"
+rust-bert = "0.20.0"
 bigdata-chess-core = { path = "../bigdata-chess-core" }
