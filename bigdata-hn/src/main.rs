@@ -14,11 +14,13 @@ use {
         tfidf_metric_calculator::run_metric_calculator_step,
         sentiment::run_sentiment_step,
         categories::run_categories_step,
+        embeddings_saver::run_embeddings_saver_step,
     }
 };
 
 mod categories;
 mod data_loading;
+mod embeddings_saver;
 mod hasher;
 mod lemmatization;
 mod models;
@@ -45,7 +47,8 @@ async fn main() -> std::io::Result<()> {
     // run_sentiment_step(queue).await;
     // run_categories_step(queue).await;
     // run_stats_collector_step(queue).await;
-    run_metric_calculator_step(queue).await;
-
+    // run_metric_calculator_step(queue).await;
+    run_embeddings_saver_step(queue).await;
+    
     Ok(())
 }

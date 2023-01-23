@@ -11,7 +11,7 @@
   - [done] write embeddings
     - read from `hn-comments`
     - write comments to `hn-comments-embeddings`.
-  - save from `hn-comments-embeddings` to csv file.
+  - [done] save from `hn-comments-embeddings` to json file.
   - read json file and cluster using https://docs.rs/linfa-clustering/latest/linfa_clustering/struct.KMeans.html
 - [done] hashing (for tfidf): https://docs.rs/murmur3/latest/murmur3/fn.murmur3_32.html
   - read from `hn-comments-tokenized`
@@ -25,5 +25,5 @@
     - write metric to `hn-comments-tfidf`
 - bag of words write words to csv and analyze using spark
   - read from `hn-comments-hashed`
-  - write stats to leveldb
+  - write stats to json
   - implement reading resulting file
