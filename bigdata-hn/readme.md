@@ -7,12 +7,12 @@
 - [done] sentiment: https://docs.rs/rust-bert/latest/rust_bert/
   - read from `hn-comments`
   - write to `hn-comments-sentiment`
-- categories: cluster rust-bert sentence embeddings using kmeans
+- [done] categories: cluster rust-bert sentence embeddings using kmeans
   - [done] write embeddings
     - read from `hn-comments`
     - write comments to `hn-comments-embeddings`.
   - [done] save from `hn-comments-embeddings` to json file.
-  - read json file and cluster using https://docs.rs/linfa-clustering/latest/linfa_clustering/struct.KMeans.html
+  - [done] read json file and cluster using https://docs.rs/linfa-clustering/latest/linfa_clustering/struct.KMeans.html
 - [done] hashing (for tfidf): https://docs.rs/murmur3/latest/murmur3/fn.murmur3_32.html
   - read from `hn-comments-tokenized`
   - write to `hn-comments-hashed`

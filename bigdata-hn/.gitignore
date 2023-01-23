@@ -3,3 +3,4 @@ config.toml
 libtorch
 tfidf_stats
 embeddings.json
+bag_of_words.json
